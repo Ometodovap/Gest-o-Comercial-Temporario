@@ -1,13 +1,13 @@
 {
   "name": "epsa-gestao-comercial",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "tsc --outDir tests/compiled --target es2022 --module es2022 --moduleResolution bundler --skipLibCheck src/types.ts src/metrics.ts src/goals.ts && node --test tests/*.test.cjs"
+    "test": "tsc --outDir tests/compiled --target es2022 --module es2022 --moduleResolution bundler --skipLibCheck src/types.ts src/metrics.ts src/goals.ts src/teamPerformance.ts src/digitalPipeline.ts && node --test tests/*.test.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.108.1",
