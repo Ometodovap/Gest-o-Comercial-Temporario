@@ -1,0 +1,3 @@
+const test=require('node:test');const assert=require('node:assert/strict');const p=import('./compiled/digitalPipeline.js');
+test('digital: somente evolução de etapa e perda, sem reabrir venda',async()=>{const d=await p;assert.equal(d.validDigitalTransition('prospecting','qualified'),true);assert.equal(d.validDigitalTransition('qualified','contacted'),false);assert.equal(d.validDigitalTransition('won','prospecting'),false);assert.equal(d.validDigitalTransition('contacted','lost'),true);});
+test('digital: conversão sobre leads sem divisões por zero',async()=>{const d=await p;assert.equal(d.digitalConversion(20,4),20);assert.equal(d.digitalConversion(0,0),null);assert.equal(d.digitalConversion(2,4),null);});
