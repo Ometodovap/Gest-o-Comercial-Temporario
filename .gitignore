@@ -6,3 +6,5 @@ dist/
 *.local
 *.sqlite
 *.sqlite-*
+
+tests/compiled/
