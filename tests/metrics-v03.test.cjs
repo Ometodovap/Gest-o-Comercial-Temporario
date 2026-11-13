@@ -1,0 +1,9 @@
+const test=require('node:test');const assert=require('node:assert/strict');
+const p=import('./compiled/metrics.js');
+const base={id:'r1',company_id:'c',seller_id:'a',team_id:'t',work_date:'2026-11-13',shift:'full',atendimentos:20,vendas_imediatas:4,agendamentos:5,retornos:3,vendas_retorno:1,cotas:6,valor_creditos:480000,notes:'',status:'submitted',returned_reason:'',created_at:'2026-11-13T16:00:00Z',updated_at:'2026-11-13T16:00:00Z'};
+test('v0.3 conversão não incorpora vendas por retorno',async()=>{const m=await p;const s=m.summary([base]);assert.equal(s.conversion,20);assert.equal(s.cotas,6);assert.equal(s.valor_creditos,480000)});
+test('v0.3 ignora rascunhos e devoluções nos indicadores',async()=>{const m=await p;assert.equal(m.summary([{...base,status:'draft'}]).conversion,null);assert.equal(m.summary([{...base,status:'returned'}]).days,0)});
+test('v0.3 valida domínio sem frações e contagens incoerentes',async()=>{const m=await p;const entry=Object.fromEntries(m.NUMERIC_FIELDS.map(k=>[k,base[k]]));entry.notes='';assert.equal(m.validateFields(entry),null);assert.match(m.validateFields({...entry,atendimentos:2}),/Vendas imediatas/);assert.match(m.validateFields({...entry,cotas:2}),/Cotas/);assert.match(m.validateFields({...entry,retornos:0}),/Vendas de retorno/);assert.match(m.validateFields({...entry,cotas:6.5}),/Valor inválido/)});
+test('v0.3 conversão vazia não é zero',async()=>{const m=await p;assert.equal(m.summary([]).conversion,null);assert.equal(m.summary([]).days,0)});
+test('v0.3 respeita dias distintos com vários turnos',async()=>{const m=await p;const s=m.summary([base,{...base,id:'r2',shift:'evening'}]);assert.equal(s.days,1);assert.equal(s.conversion,20)});
+test('v0.3 evolução exige dados válidos',async()=>{const m=await p;const f={seller_id:'a',created_at:'2026-11-06T16:00:00Z',review_date:'2026-11-20'};const result=m.evolution(f,[base],'2026-11-13');assert.equal(result.available,false)});
