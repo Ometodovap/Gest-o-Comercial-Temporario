@@ -16,3 +16,6 @@
 .daily-row small{color:#7185a0}.daily-row b{font-size:12px;color:#214565;font-weight:600}
 .daily-bar-fill{background:#4181bb;height:100%;border-radius:100px}
 @media(max-width:700px){.period-bar{padding:12px}.period-bar label{width:100%}.goal-grid{grid-template-columns:1fr}.daily-row{grid-template-columns:85px 1fr;gap:8px}.daily-row b{grid-column:2;justify-self:start}}
+
+/* v0.7: acompanhamento por stand */
+.cell-subtitle{display:block;font-size:11px;color:#7185a0;margin-top:5px}
