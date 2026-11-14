@@ -6,6 +6,7 @@ import {digitalStages,validDigitalTransition} from './digitalPipeline';
 import {actionLabels,digitalInsights,dueSort,dueStatus,isValidCredit,lossLabels} from './digitalInsights';
 import type {DigitalActionRow,DigitalStageRow,DigitalOpportunityRow,FollowupDue} from './digitalInsights';
 import DigitalHistory from './DigitalHistory';
+import DigitalManagerPanel from './DigitalManagerPanel';
 import {brl,todayBrazil} from './metrics';
 
 type DigitalOpportunity=DigitalOpportunityRow&{
@@ -155,6 +156,7 @@ export default function DigitalWorkspace({client,companyId,userId,role,assignmen
  }
  const agendaItems=queue.slice(0,8);
  return <>
+  {(role==='supervisor'||role==='manager')&&<DigitalManagerPanel opportunities={items} stageEvents={stageEvents} followups={followups} today={today} people={people} loading={loading} limited={limited}/>}
   <section className="panel">
    <h2>Inteligência comercial digital — piloto</h2>
    <p>Resultados das oportunidades autorizadas e atividades registradas. Não utilize dados pessoais de clientes nesta etapa; a operação presencial permanece independente.</p>
