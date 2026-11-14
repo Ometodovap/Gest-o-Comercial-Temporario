@@ -49,3 +49,39 @@
 .due-unscheduled{background:#edf1f6;color:#52647d}
 .due-scheduled{background:#e5f5f0;color:#17624d}
 .due-closed{background:#edf1f6;color:#52647d}
+
+/* v0.9 — sidebar responsiva com navegação rolável e saída sempre acessível.
+   A lista pode crescer sem deslocar o usuário e o botão "Sair da conta". */
+.sidebar{height:100vh;height:100dvh;overflow:hidden}
+.sidebar .brand,.sidebar .sidebar-name{flex-shrink:0}
+.sidebar nav{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior-y:contain;
+  align-content:start;
+  scrollbar-width:thin;
+  scrollbar-color:#577392 transparent;
+}
+.sidebar nav button{width:100%;min-height:46px}
+.sidebar nav button:focus-visible,.sidebar-bottom button:focus-visible{
+  outline:3px solid #f1a332;outline-offset:2px;
+}
+.sidebar-bottom{flex-shrink:0;margin-top:0}
+/* Telas estreitas: o menu vira faixa horizontal rolável, sem esconder opções. */
+@media(max-width:800px){
+  .sidebar{height:auto;overflow:visible}
+  .sidebar nav{
+    flex:initial;
+    display:flex;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    overflow-y:hidden;
+    white-space:nowrap;
+    min-height:0;
+    -webkit-overflow-scrolling:touch;
+  }
+  .sidebar nav button{width:auto;min-width:max-content;flex-shrink:0}
+  .sidebar-bottom{margin-top:0}
+}
