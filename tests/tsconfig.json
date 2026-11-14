@@ -17,6 +17,7 @@
     "../src/goals.ts",
     "../src/teamPerformance.ts",
     "../src/digitalPipeline.ts",
-    "../src/digitalInsights.ts"
+    "../src/digitalInsights.ts",
+    "../src/digitalManagement.ts"
   ]
 }
