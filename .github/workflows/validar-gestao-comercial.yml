@@ -1,0 +1,28 @@
+name: Validar Gestão Comercial
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Preparar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Instalar dependências pelo lockfile
+        run: npm ci
+      - name: Auditar vulnerabilidades altas
+        run: npm audit --audit-level=high
+      - name: Executar testes
+        run: npm test
+      - name: Compilar produção
+        run: npm run build
