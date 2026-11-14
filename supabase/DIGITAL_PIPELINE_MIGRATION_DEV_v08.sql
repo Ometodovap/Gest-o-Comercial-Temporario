@@ -65,6 +65,7 @@ BEGIN
  IF (to_jsonb(NEW)-'stage'-'estimated_credit'-'next_action_on'-'lost_reason'-'updated_at'-'updated_by')
    <> (to_jsonb(OLD)-'stage'-'estimated_credit'-'next_action_on'-'lost_reason'-'updated_at'-'updated_by')
  THEN RAISE EXCEPTION 'Identidade e origem da oportunidade não podem ser alteradas'; END IF;
+ IF OLD.stage IN ('won','lost') THEN RAISE EXCEPTION 'Oportunidade encerrada não pode ser alterada';END IF;
  IF NEW.stage<>OLD.stage THEN
   IF OLD.stage IN ('won','lost') THEN RAISE EXCEPTION 'Venda concluída ou oportunidade perdida não pode ser reaberta';END IF;
   old_step=array_position(ARRAY['prospecting','contacted','qualified','proposal','negotiation','won'],OLD.stage);
