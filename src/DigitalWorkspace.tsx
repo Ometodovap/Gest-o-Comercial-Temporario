@@ -153,7 +153,7 @@ export default function DigitalWorkspace({client,companyId,userId,role,assignmen
   setNextDraft(x=>{const y={...x};delete y[item.id];return y;});
   await refresh();
  }
- const duePriority=queue.filter(o=>['overdue','today','unscheduled'].includes(dueStatus(o,today))).slice(0,8);
+ const agendaItems=queue.slice(0,8);
  return <>
   <section className="panel">
    <h2>Inteligência comercial digital — piloto</h2>
@@ -170,15 +170,16 @@ export default function DigitalWorkspace({client,companyId,userId,role,assignmen
   </section>
   <section className="panel">
    <h2>Agenda de follow-ups</h2>
-   <p>Prioridade para ações vencidas, programadas para hoje e oportunidades sem próximo contato. Datas são consideradas no horário do Brasil.</p>
+   <p>Agenda por prioridade: vencidas, para hoje, futuras e sem data. Datas são consideradas no horário do Brasil.</p>
    <div className="mini-stats"><span>{insights.due.overdue} vencida(s)</span><span>{insights.due.today} para hoje</span>
     <span>{insights.due.scheduled} futura(s)</span><span>{insights.due.unscheduled} sem data</span></div>
    <div className="table-scroll"><table><thead><tr><th>Oportunidade</th><th>Responsável</th><th>Etapa</th><th>Próxima ação</th><th>Situação</th></tr></thead>
-    <tbody>{duePriority.map(o=><tr key={o.id}>
+    <tbody>{agendaItems.map(o=><tr key={o.id}>
      <td>#{o.id.slice(0,8)}</td><td>{name(o.seller_id)}</td><td>{stageLabel(o.stage)}</td>
      <td>{asDate(o.next_action_on)}</td><td><span className={'due-label due-'+dueStatus(o,today)}>{statusLabel(dueStatus(o,today))}</span></td>
-    </tr>)}{duePriority.length===0&&<tr><td colSpan={5}>Sem ações prioritárias neste momento.</td></tr>}</tbody>
+    </tr>)}{agendaItems.length===0&&<tr><td colSpan={5}>Nenhuma oportunidade aberta para acompanhar.</td></tr>}</tbody>
    </table></div>
+   {queue.length>8&&<p>Exibindo as 8 primeiras de {queue.length} oportunidades abertas. Utilize os filtros abaixo para consultar as demais.</p>}
   </section>
   <section className="panel">
    <h2>Produtividade digital por vendedor</h2>
