@@ -66,3 +66,9 @@ test('v0.11: variáveis privadas continuam fora do Git e chave só é publishabl
  assert.match(app,/import\.meta\.env\.VITE_SUPABASE_PUBLISHABLE_KEY/);
  assert.doesNotMatch(app,/import\.meta\.env\.VITE_.*(?:SERVICE_ROLE|SECRET)/);
 });
+
+test('v0.11: uma vinculação de outro usuário não concede papel na interface',()=>{
+ const app=fs.readFileSync(path.join(__dirname,'../src/App.tsx'),'utf8');
+ assert.match(app,/const membership=memberships\.find\(m=>m\.company_id===companyId&&m\.user_id===user\?\.id&&m\.active\)/);
+ assert.match(app,/if\(!membership\)return/);
+});
