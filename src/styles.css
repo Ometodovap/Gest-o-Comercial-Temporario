@@ -19,3 +19,9 @@
 
 /* v0.7: acompanhamento por stand */
 .cell-subtitle{display:block;font-size:11px;color:#7185a0;margin-top:5px}
+
+/* v0.8: funil de vendas digitais (piloto de homologação) */
+.digital-funnel{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-top:20px}
+.digital-stage{border:1px solid #dfe7f2;background:#f8fbff;border-radius:12px;padding:13px;min-width:0}
+.digital-stage strong{display:block;font-size:24px;color:#153759;margin-bottom:8px}
+.digital-stage small{font-size:11px;color:#607b99;line-height:1.4;display:block}
