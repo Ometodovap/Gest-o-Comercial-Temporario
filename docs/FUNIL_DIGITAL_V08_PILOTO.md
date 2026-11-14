@@ -28,10 +28,11 @@ Migrações já aplicadas:
 ## Homologação sugerida
 1. Entrar como Ana Martins. Ir a **Vendas digitais** e cadastrar uma oportunidade fictícia.
 2. Avançar da prospecção para contato, qualificação, proposta e negociação; registrar próxima ação.
-3. Concluir como ganha ou perdida com motivo e confirmar que não é possível reabrir.
-4. Entrar como Marcos. Confirmar visualização das oportunidades da equipe.
-5. Entrar como Bia ou Carla. Confirmar ausência dos dados da Empresa Piloto A.
-6. Conferir se os indicadores presenciais permaneceram sem alteração.
+3. Abrir **Ver histórico de etapas** no cartão e confirmar a ordem dos eventos, o usuário e a data.
+4. Concluir como ganha ou perdida com motivo e confirmar que não é possível reabrir.
+5. Entrar como Marcos. Confirmar visualização das oportunidades da equipe.
+6. Entrar como Bia ou Carla. Confirmar ausência dos dados da Empresa Piloto A.
+7. Conferir se os indicadores presenciais permaneceram sem alteração.
 
 ## Expansão posterior
 Ligações reais com MCI/CRM, deduplicação de leads, consentimento e retenção, múltiplos responsáveis, integrações de origem e follow-up mais elaborado serão desenvolvidos após homologação e auditoria específica. A v0.8 ainda é piloto com dados fictícios.
