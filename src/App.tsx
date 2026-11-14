@@ -42,6 +42,7 @@ export default function App(){
  const [reports,setReports]=useState<Report[]>([]);const [feedbacks,setFeedbacks]=useState<Feedback[]>([]);
  const [goals,setGoals]=useState<MonthlyGoal[]>([]);const [teamGoals,setTeamGoals]=useState<TeamGoal[]>([]);const [periodMonth,setPeriodMonth]=useState(today.slice(0,7));
  const loadGate=useRef(createScopeGuard());
+ const authUserId=useRef('');
  const [loadedScope,setLoadedScope]=useState('');
  const currentScope=scopeKey(user?.id,companyId,periodMonth);
  const liveScope=useRef(currentScope);
@@ -92,9 +93,24 @@ export default function App(){
 
  useEffect(()=>{if(!supabase){setReady(true);return;}
   let active=true;
-  supabase.auth.getUser().then(({data,error})=>{if(active){setUser(error?null:data.user);setReady(true)}});
+  let authEventSeen=false;
+  supabase.auth.getUser().then(({data,error})=>{
+   if(active&&!authEventSeen){
+    const next=error?null:data.user;
+    if((next?.id||'')!==authUserId.current){
+     authUserId.current=next?.id||'';
+     loadGate.current.invalidate();setLoadedScope('');
+    }
+    setUser(next);setReady(true);
+   }
+  });
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
-   loadGate.current.invalidate();setLoadedScope('');
+   authEventSeen=true;
+   const nextId=session?.user?.id||'';
+   if(nextId!==authUserId.current){
+    authUserId.current=nextId;
+    loadGate.current.invalidate();setLoadedScope('');
+   }
    setUser(session?.user||null);setReady(true);
   });
   return ()=>{active=false;subscription.unsubscribe()};
