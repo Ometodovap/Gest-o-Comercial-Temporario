@@ -18,7 +18,7 @@ test('v0.8: histórico permitido somente para conta autenticada e responsável a
 test('v0.8: interface não concede inserção, edição ou exclusão dos eventos',()=>{
  assert.doesNotMatch(sql,/GRANT (?:INSERT|UPDATE|DELETE)\b/i);
  assert.doesNotMatch(sql,/CREATE POLICY\s+\w+\s+ON[^;]+FOR (?:INSERT|UPDATE|DELETE)/i);
- assert.match(ui,/from\('gc_digital_stage_events'\)\.select\(/);
+ assert.match(ui,/from\('gc_digital_stage_events'\)\s*\.select\(/);
  assert.doesNotMatch(ui,/gc_digital_stage_events'\)\.(?:insert|update|delete)/);
 });
 test('v0.8: histórico é consultado por oportunidade e ordenado cronologicamente',()=>{
