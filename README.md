@@ -1,6 +1,15 @@
-# EPSA Gestão Comercial v0.8 — funil digital piloto
+# EPSA Gestão Comercial v0.9 — inteligência e produtividade digital
 
 **Ambiente de homologação independente**, conectado somente ao Supabase **Gestao Comercial Temporario** (`tilrqwcymhghmpvxukur`). Não use dados reais de clientes nesta fase. O EPSA Core e a GVS não são alterados por este projeto.
+
+## Novidades da v0.9 — análise e follow-ups
+
+- Agenda de próximos contatos (vencidas, hoje, futuras e sem data), motivos de perda e produtividade por vendedor.
+- Registro de atividade comercial com autor e data gerados pelo banco; sem dados pessoais de clientes.
+- Correção de crédito estimado com trilha privada de auditoria.
+- Migração `gc_digital_followups_credit_v09` já aplicada **somente no Supabase temporário**; não executar novamente nele.
+- Indicadores limitados às oportunidades autorizadas e a até 500 registros recentes; não representam um relatório financeiro total.
+- Ver detalhes em `docs/INTELIGENCIA_DIGITAL_V09_HOMOLOGACAO.md`. **A publicação v0.8 segue intacta.**
 
 ## Novidades da v0.8 — piloto do funil digital
 
