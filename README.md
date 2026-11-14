@@ -1,8 +1,17 @@
-# EPSA Gestão Comercial v0.7 — produtividade por stand
+# EPSA Gestão Comercial v0.8 — funil digital piloto
 
 **Ambiente de homologação independente**, conectado somente ao Supabase **Gestao Comercial Temporario** (`tilrqwcymhghmpvxukur`). Não use dados reais de clientes nesta fase. O EPSA Core e a GVS não são alterados por este projeto.
 
-## Novidades da v0.7 (branch de homologação)
+## Novidades da v0.8 — piloto do funil digital
+
+- Menu **Vendas digitais** com cadastro de oportunidades *sem dados pessoais de clientes*, etapas de prospecção até ganho/perda, próxima ação e motivo de perda.
+- Indicadores por etapa e conversão das oportunidades cadastradas no painel (não é conversão de uma coorte de leads reais).
+- Controles por vendedor, supervisor e empresa, auditoria privada de mudanças de etapa, e proibição de alteração da identidade/origem.
+- Somente projeto Supabase de homologação. Migrações `gc_digital_pipeline_stage_v08` e `gc_digital_terminal_lock_v08a` já aplicadas nele. **Não reaplicar no mesmo projeto nem em EPSA Core/GVS**.
+- A modalidade presencial v0.7 permanece intacta. *Dados pessoais e integração CRM/MCI ainda não estão habilitados.*
+- Testes novos em `tests/digital-pipeline-v08.test.cjs`; executar `npm test` e `npm run build` antes de publicar.
+
+## Novidades da v0.7 (branch anterior)
 
 - Menu **Produtividade por stand** para supervisão/diretoria, com comparativo por stand e ranking dos vendedores autorizados.
 - Metas mensais **independentes por stand/equipe**, complementares às metas individuais existentes.
