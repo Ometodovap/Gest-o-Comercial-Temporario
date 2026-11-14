@@ -6,3 +6,8 @@ dist/
 *.local
 *.sqlite
 *.sqlite-*
+
+tests/compiled/
+
+# TypeScript incremental compilation
+*.tsbuildinfo

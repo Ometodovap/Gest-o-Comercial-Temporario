@@ -24,3 +24,11 @@ export type MonthlyGoal = {
  created_at:string; updated_at:string; created_by:string; updated_by:string;
 };
 export type GoalNumbers = Pick<MonthlyGoal,'goal_atendimentos'|'goal_vendas'|'goal_cotas'|'goal_creditos'>;
+
+/** Meta independente por equipe/stand. Não é a soma implícita das metas individuais. */
+export type TeamGoal = {
+ id:string;company_id:string;team_id:string;month_start:string;
+ goal_atendimentos:number;goal_vendas:number;goal_cotas:number;goal_creditos:number;
+ created_at:string;updated_at:string;created_by:string;updated_by:string;
+};
+export type DigitalStage = 'prospecting' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';

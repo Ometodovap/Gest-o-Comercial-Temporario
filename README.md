@@ -1,6 +1,23 @@
-# EPSA Gestão Comercial v0.6 — metas e produtividade
+# EPSA Gestão Comercial v0.7 — produtividade por stand
 
 **Ambiente de homologação independente**, conectado somente ao Supabase **Gestao Comercial Temporario** (`tilrqwcymhghmpvxukur`). Não use dados reais de clientes nesta fase. O EPSA Core e a GVS não são alterados por este projeto.
+
+## Novidades da v0.7 (branch de homologação)
+
+- Menu **Produtividade por stand** para supervisão/diretoria, com comparativo por stand e ranking dos vendedores autorizados.
+- Metas mensais **independentes por stand/equipe**, complementares às metas individuais existentes.
+- Cálculos por `team_id` registrado no fechamento (transferências futuras de vendedor não alteram o passado); somente enviados/validados entram nos indicadores.
+- `gc_team_monthly_goals` + auditoria no Supabase **temporário**, com RLS: supervisor gerencia sua equipe; vendedor apenas consulta; outra empresa não acessa.
+- Estrutura e testes do **funil digital** em `src/digitalPipeline.ts`, com especificação em `docs/FUNIL_DIGITAL_V07_DESENHO.md`. **Ainda sem captação de leads, formulários de clientes nem mudanças no CRM.**
+- Testes locais de funções comerciais: 36 aprovados; testes transacionais de permissões no Supabase temporário: aprovados. **Build completo React/Vite pendente de validação em ambiente com npm**.
+- A branch `main` e a publicação atual da Cloudflare Pages ficam intactas até revisão e merge.
+
+### Aplicar a v0.7
+
+A migração `supabase/TEAM_GOALS_MIGRATION_DEV_v07.sql` **já foi aplicada** no projeto Supabase temporário `tilrqwcymhghmpvxukur` e não deve ser executada novamente nesse projeto. Não execute no EPSA Core ou na GVS.
+Para teste de código, troque para a branch de v0.7 no VS Code, preserve o seu `.env`, execute `npm install`, `npm test` e `npm run build`.
+
+---
 
 ## O que mudou na v0.6
 
