@@ -1,6 +1,13 @@
-# EPSA Gestão Comercial v0.9 — inteligência e produtividade digital
+# EPSA Gestão Comercial v0.10 — painel gerencial digital
 
 **Ambiente de homologação independente**, conectado somente ao Supabase **Gestao Comercial Temporario** (`tilrqwcymhghmpvxukur`). Não use dados reais de clientes nesta fase. O EPSA Core e a GVS não são alterados por este projeto.
+
+## Novidades da v0.10 — supervisão e alertas digitais
+
+- Painel exclusivo para supervisor/direção, com carteira por vendedor, pendências por prioridade e alertas calculados a partir de movimentações efetivamente registradas.
+- Ausência de movimentação configurável: 3, 7 ou 14 dias, com datas do Brasil. Não significa ausência de trabalho fora do aplicativo.
+- Sem alterações no Supabase, nas oportunidades ou no módulo presencial; dados fictícios de homologação.
+- Consulte `docs/GESTAO_DIGITAL_V010_ALERTAS.md`; publicação da v0.9.1 permanece intacta até homologação da branch.
 
 ## Novidades da v0.9 — análise e follow-ups
 
