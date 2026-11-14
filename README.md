@@ -1,6 +1,16 @@
-# EPSA Gestão Comercial v0.10 — painel gerencial digital
+# EPSA Gestão Comercial v0.11 — consolidação e segurança
 
 **Ambiente de homologação independente**, conectado somente ao Supabase **Gestao Comercial Temporario** (`tilrqwcymhghmpvxukur`). Não use dados reais de clientes nesta fase. O EPSA Core e a GVS não são alterados por este projeto.
+
+## Novidades da v0.11 — consolidação e segurança
+
+- Consultas na interface ficam vinculadas a usuário, empresa e mês: requisições antigas são ignoradas após troca de sessão ou contexto.
+- Tela aguarda dados autorizados antes de apresentar painéis, evitando exibir resultados obsoletos de outra empresa.
+- Cabeçalhos Cloudflare Pages para dificultar clickjacking, exposição indevida de referer, e uso não solicitado de recursos do dispositivo.
+- Testes de regressão de sessão, escopo, configuração pública do Supabase e headers.
+- Auditoria de segurança documentada em `docs/SEGURANCA_CONSOLIDACAO_V011.md`, com consulta SQL de leitura em `supabase/SEGURANCA_AUDITORIA_SOMENTE_LEITURA_V011.sql`.
+- A proteção contra senhas vazadas no Supabase Auth continua pendente e exige plano Pro ou superior. Não alterar plano sem aprovação.
+- **Sem migração ou alteração de dados no Supabase; não usar clientes reais.** v0.10 publicada permanece intacta até homologação.
 
 ## Novidades da v0.10 — supervisão e alertas digitais
 

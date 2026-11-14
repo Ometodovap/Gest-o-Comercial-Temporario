@@ -18,6 +18,7 @@
     "../src/teamPerformance.ts",
     "../src/digitalPipeline.ts",
     "../src/digitalInsights.ts",
-    "../src/digitalManagement.ts"
+    "../src/digitalManagement.ts",
+    "../src/securityScope.ts"
   ]
 }
