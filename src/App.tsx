@@ -60,7 +60,7 @@ export default function App(){
  const [reviewDate,setReviewDate]=useState(moveDay(today,7));
  const [reviewStatus,setReviewStatus]=useState<Record<string,'improved'|'stable'|'needs_support'>>({});
  const [reviewNotes,setReviewNotes]=useState<Record<string,string>>({});
- const membership=memberships.find(m=>m.company_id===companyId);
+ const membership=memberships.find(m=>m.company_id===companyId&&m.user_id===user?.id&&m.active);
  const role=membership?.role;
  const myAssignments=assignments.filter(x=>x.seller_id===user?.id&&x.active);
  const availableSellers=people.filter(x=>x.role==='seller'&&assignments.some(a=>a.seller_id===x.user_id&&a.active));
