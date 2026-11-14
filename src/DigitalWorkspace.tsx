@@ -3,6 +3,7 @@ import type {FormEvent} from 'react';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import type {Assignment,DigitalStage,Membership,Role,Team} from './types';
 import {digitalConversion,digitalStages,validDigitalTransition} from './digitalPipeline';
+import DigitalHistory from './DigitalHistory';
 import {brl,todayBrazil} from './metrics';
 
 type DigitalOpportunity={
@@ -132,6 +133,7 @@ export default function DigitalWorkspace({client,companyId,userId,role,assignmen
       </div>
       {closed?<small>Oportunidade encerrada. Registros preservados para auditoria.</small>:
        <button disabled={busy} className="secondary" onClick={()=>void update(item)}>Salvar acompanhamento</button>}
+      <DigitalHistory key={item.id+'-'+item.updated_at} client={client} opportunityId={item.id} people={people}/>
      </article>
     })}
     {items.filter(item=>filterStage==='all'||item.stage===filterStage).length===0&&<p>Sem oportunidades nesta seleção. Ausência de registro não significa ausência de trabalho.</p>}
