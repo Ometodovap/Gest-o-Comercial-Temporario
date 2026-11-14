@@ -1,4 +1,4 @@
-import {dueStatus} from './digitalInsights';
+import {dueStatus} from './digitalInsights.js';
 import type {DigitalActionRow,DigitalOpportunityRow,DigitalStageRow} from './digitalInsights';
 
 export type DigitalManagementAlert='overdue'|'today'|'stalled'|'unscheduled';
