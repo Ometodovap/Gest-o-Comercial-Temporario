@@ -4,6 +4,9 @@
 
 ## Novidades da v0.9 — análise e follow-ups
 
+- **Menu lateral responsivo:** itens roláveis de forma independente com acesso à saída preservado; navegação horizontal em telas estreitas.
+
+
 - Agenda de próximos contatos (vencidas, hoje, futuras e sem data), motivos de perda e produtividade por vendedor.
 - Registro de atividade comercial com autor e data gerados pelo banco; sem dados pessoais de clientes.
 - Correção de crédito estimado com trilha privada de auditoria.
