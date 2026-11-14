@@ -137,8 +137,10 @@ export default function App(){
     .eq('user_id',userId).eq('active',true);
    if(!active||current!==requestNumber||authUserId.current!==userId)return;
    if(error){
+    setMemberships([]);setCompanyId('');setCompanyChoices({});
+    membershipFingerprint.current='';
     notify('Não foi possível verificar seu acesso: '+error.message,true);
-    return; // Falha fechada: conteúdo permanece oculto.
+    return; // Falha fechada: conteúdo permanece oculto, sem permitir ação com vínculo antigo.
    }
    const ms=(data||[]) as Membership[];
    const fingerprint=activeMembershipFingerprint(ms);
