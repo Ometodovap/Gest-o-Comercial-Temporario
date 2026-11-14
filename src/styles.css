@@ -85,3 +85,19 @@
   .sidebar nav button{width:auto;min-width:max-content;flex-shrink:0}
   .sidebar-bottom{margin-top:0}
 }
+
+/* v0.10 — painel de inteligência digital para supervisores */
+.digital-manager-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:14px 0}
+.digital-manager-toolbar label{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-weight:650}
+.digital-manager-toolbar select{max-width:170px;padding:10px 12px}
+.digital-manager-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px;margin:16px 0 24px}
+.digital-manager-summary div{border:1px solid #dce7f3;background:#f7faff;border-radius:10px;padding:14px}
+.digital-manager-summary strong{display:block;font-size:23px;color:#14365a}
+.digital-manager-summary span{display:block;font-size:11px;color:#56718d;line-height:1.4;margin-top:6px}
+.digital-manager-tags{display:flex;gap:4px;flex-wrap:wrap;min-width:150px}
+.digital-manager-overdue{background:#ffebec;color:#a52f40}
+.digital-manager-today{background:#fff2d9;color:#8d570c}
+.digital-manager-stalled{background:#fff0e6;color:#9c520f}
+.digital-manager-unscheduled{background:#e9eef8;color:#405f86}
+.digital-manager-warning{border-left:4px solid #d08a24;padding:9px 13px;background:#fff8ed}
+@media(max-width:600px){.digital-manager-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
