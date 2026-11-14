@@ -6,6 +6,7 @@ import type {Assignment,Feedback,Membership,Report,ReportFields,Team,Shift,Statu
 import {teamCoverage,teamGoalFor,teamLeaderboard,teamMonthlyStats,teamRoster} from './teamPerformance';
 import DigitalWorkspace from './DigitalWorkspace';
 import {createScopeGuard,scopeKey} from './securityScope';
+import {activeMembershipFingerprint} from './accessMembership';
 import {brl,emptyFields,evolution,moveDay,NUMERIC_FIELDS,percent,summary,todayBrazil,validateFields} from './metrics';
 import {emptyGoal,goalForSeller,goalMetrics,goalProgress,managerTotals,monthDailyStats,monthlyReports,sellerMonthlyStats,validateGoal} from './goals';
 
@@ -44,6 +45,8 @@ export default function App(){
  const loadGate=useRef(createScopeGuard());
  const authUserId=useRef('');
  const [loadedScope,setLoadedScope]=useState('');
+ const [membershipRevision,setMembershipRevision]=useState(0);
+ const membershipFingerprint=useRef('');
  const currentScope=scopeKey(user?.id,companyId,periodMonth);
  const liveScope=useRef(currentScope);
  liveScope.current=currentScope;
@@ -115,15 +118,56 @@ export default function App(){
   });
   return ()=>{active=false;subscription.unsubscribe()};
  },[]);
- useEffect(()=>{if(!user||!supabase){setMemberships([]);setCompanyId('');return;}
+ useEffect(()=>{
+  if(!user||!supabase){
+   membershipFingerprint.current='';
+   setMemberships([]);setCompanyId('');setCompanyChoices({});
+   return;
+  }
   let active=true;
-  supabase.from('gc_memberships').select('company_id,user_id,role,display_name,active').eq('user_id',user.id).eq('active',true)
-   .then(({data,error})=>{if(!active)return;if(error){notify('Não foi possível carregar sua vinculação: '+error.message,true);return;}
-    const ms=(data||[]) as Membership[];setMemberships(ms);setCompanyId(prev=>ms.some(m=>m.company_id===prev)?prev:(ms[0]?.company_id||''));
-    if(ms.length){void supabase!.from('gc_companies').select('id,name').in('id',ms.map(m=>m.company_id)).then(({data:cs})=>{
-      if(active&&cs)setCompanyChoices(Object.fromEntries(cs.map(c=>[c.id,c.name])));
-    });}
-   });return()=>{active=false};
+  let requestNumber=0;
+  const userId=user.id;
+  // Ao retomar a página, confirme vínculos ativos ANTES de exibir dados em cache.
+  const verifyAccess=async()=>{
+   const current=++requestNumber;
+   loadGate.current.invalidate();
+   setLoadedScope('');
+   const {data,error}=await supabase.from('gc_memberships')
+    .select('company_id,user_id,role,display_name,active')
+    .eq('user_id',userId).eq('active',true);
+   if(!active||current!==requestNumber||authUserId.current!==userId)return;
+   if(error){
+    notify('Não foi possível verificar seu acesso: '+error.message,true);
+    return; // Falha fechada: conteúdo permanece oculto.
+   }
+   const ms=(data||[]) as Membership[];
+   const fingerprint=activeMembershipFingerprint(ms);
+   if(fingerprint!==membershipFingerprint.current){
+    membershipFingerprint.current=fingerprint;
+    setTab('day');
+    setCompanyChoices({});
+   }
+   setMemberships(ms);
+   setCompanyId(prev=>ms.some(m=>m.company_id===prev)?prev:(ms[0]?.company_id||''));
+   // Revalida dados e papel também quando o usuário continua na mesma empresa.
+   setMembershipRevision(n=>n+1);
+   if(ms.length){
+    const {data:companies}=await supabase.from('gc_companies').select('id,name').in('id',ms.map(m=>m.company_id));
+    if(active&&current===requestNumber&&authUserId.current===userId&&companies){
+     setCompanyChoices(Object.fromEntries(companies.map(c=>[c.id,c.name])));
+    }
+   }
+  };
+  const onFocus=()=>{void verifyAccess();};
+  const onVisible=()=>{if(document.visibilityState==='visible')void verifyAccess();};
+  void verifyAccess();
+  window.addEventListener('focus',onFocus);
+  document.addEventListener('visibilitychange',onVisible);
+  return ()=>{
+   active=false;requestNumber++;
+   window.removeEventListener('focus',onFocus);
+   document.removeEventListener('visibilitychange',onVisible);
+  };
  },[user?.id]);
  const loadData=useCallback(async()=>{
   const requestScope=scopeKey(user?.id,companyId,periodMonth);
@@ -155,7 +199,7 @@ export default function App(){
     notify(`Falha ao consultar informações: ${e instanceof Error?e.message:(e&&typeof e==='object'&&'message' in e?String(e.message):String(e))}`,true);
    }
   }finally{if(loadGate.current.isCurrent(ticket,liveScope.current))setBusy(false)}
- },[companyId,periodMonth,user?.id]);
+ },[companyId,periodMonth,user?.id,membershipRevision]);
  useEffect(()=>{void loadData()},[loadData]);
  useEffect(()=>{
   const x=reports.find(r=>r.seller_id===user?.id&&r.work_date===workDate&&r.shift===shift);
@@ -272,5 +316,5 @@ export default function App(){
  {tab==='feedback'&&<>{role!=='seller'&&<section className="panel"><h2>Nova orientação</h2><form onSubmit={createFeedback}><div className="form-grid"><label>Vendedor<select value={feedbackSeller} onChange={e=>setFeedbackSeller(e.target.value)}>{availableSellers.map(p=><option key={p.user_id} value={p.user_id}>{p.display_name}</option>)}</select></label><label>Indicador observado<input maxLength={100} value={indicator} onChange={e=>setIndicator(e.target.value)} required/></label><label>Início do período<input type="date" value={periodStart} onChange={e=>setPeriodStart(e.target.value)} required/></label><label>Fim do período<input type="date" value={periodEnd} onChange={e=>setPeriodEnd(e.target.value)} required/></label><label>Data de revisão<input type="date" value={reviewDate} onChange={e=>setReviewDate(e.target.value)} required/></label></div><label>Diagnóstico e contexto<textarea required minLength={2} maxLength={700} value={diagnosis} onChange={e=>setDiagnosis(e.target.value)} rows={3}/></label><label>Ação combinada<textarea required minLength={2} maxLength={700} value={actionPlan} onChange={e=>setActionPlan(e.target.value)} rows={3}/></label><button disabled={busy||!feedbackSeller} className="primary">Registrar feedback e ação</button></form></section>}
  <section className="panel"><h2>{role==='seller'?'Orientações recebidas':'Histórico de feedbacks'}</h2><p>Confirmação de leitura significa recebimento, não concordância automática.</p><div className="cards">{feedbacks.map(f=><article className="activity" key={f.id}><header><b>{f.indicator} — {name(f.seller_id)}</b><span>{f.acknowledged_at?'Leitura confirmada':'Aguardando leitura'}</span></header><small>Período: {formatDate(f.period_start)} a {formatDate(f.period_end)} · Revisão {formatDate(f.review_date)}</small><p><b>Diagnóstico:</b> {f.diagnosis}</p><div className="callout"><b>Ação combinada</b><p>{f.action_plan}</p></div>{role==='seller'&&!f.acknowledged_at&&<button className="secondary" disabled={busy} onClick={()=>void acknowledge(f)}>Confirmar leitura</button>}{f.reviewed_at&&<div className="success">Revisão: {f.review_status==='improved'?'Melhorou':f.review_status==='stable'?'Estável':'Precisa de acompanhamento'} · {f.review_notes||'Sem observações adicionais'}</div>}</article>)}{feedbacks.length===0&&<p>Não há orientações registradas ainda.</p>}</div></section></>}
  {tab==='evolution'&&<section className="panel"><h2>Evolução após as orientações</h2><p>Janelas de até sete dias antes e depois. São necessários três dias com registros válidos em cada janela; a comparação não prova causalidade.</p><div className="cards">{feedbacks.map(f=>{const e=evolution(f,reports,today);return <article key={f.id} className="activity"><header><b>{f.indicator} — {name(f.seller_id)}</b><span>{formatDate(f.review_date)}</span></header><div className="mini-stats"><span>Antes: {percent(e.before.conversion)} ({e.before.days} dias)</span><span>Depois: {percent(e.after.conversion)} ({e.after.days} dias)</span><span>{e.available&&e.delta!==null?`Variação: ${e.delta.toFixed(1)} p.p.`:'Dados ainda insuficientes'}</span></div><p><b>Ação:</b> {f.action_plan}</p>{f.reviewed_at?<div className="success">Revisão registrada: {f.review_notes||f.review_status}</div>:role!=='seller'&&<><label>Avaliação<select value={reviewStatus[f.id]||''} onChange={ev=>setReviewStatus(o=>({...o,[f.id]:ev.target.value as 'improved'|'stable'|'needs_support'}))}><option value="">Selecione...</option><option value="improved">Melhorou</option><option value="stable">Estável</option><option value="needs_support">Precisa de acompanhamento</option></select></label><label>Observações<textarea rows={2} maxLength={700} value={reviewNotes[f.id]||''} onChange={ev=>setReviewNotes(o=>({...o,[f.id]:ev.target.value}))}/></label><button disabled={busy} className="primary" onClick={()=>void saveReview(f)}>Registrar revisão</button></>}</article>})}{feedbacks.length===0&&<p>Sem feedbacks para comparar.</p>}</div></section>}
- <footer>EPSA Gestão Comercial v0.11 — Ambiente Supabase de homologação, dados fictícios. Não usar dados reais.</footer></div></main></div>;
+ <footer>EPSA Gestão Comercial v0.12 — Ambiente Supabase de homologação, dados fictícios. Não usar dados reais.</footer></div></main></div>;
 }
