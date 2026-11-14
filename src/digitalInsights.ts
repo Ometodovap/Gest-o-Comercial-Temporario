@@ -18,7 +18,7 @@ export const actionLabels:Record<DigitalActionRow['action_type'],string>={
  contacted:'Contato realizado',no_answer:'Tentativa sem resposta',rescheduled:'Reagendamento'
 };
 export function isValidCredit(value:number):boolean{
- return Number.isFinite(value)&&value>=0&&value<=1000000000000&&Math.abs(value*100-Math.round(value*100))<0.000001;
+ return Number.isFinite(value)&&value>=0&&value<=999999999999.99&&Math.abs(value*100-Math.round(value*100))<0.000001;
 }
 export function dueStatus(o:Pick<DigitalOpportunityRow,'stage'|'next_action_on'>,today:string):FollowupDue{
  if(terminal.has(o.stage))return 'closed';
