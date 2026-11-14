@@ -27,4 +27,4 @@ UNION ALL SELECT 'private_functions','GC private functions callable by anon',cou
 UNION ALL SELECT 'audit','Audit tables without RLS',
  count(*)::text FROM tables WHERE relname LIKE '%_audit' AND NOT relrowsecurity
 UNION ALL SELECT 'defaults','PUBLIC default grants (inspect SQL before change)',
- coalesce(string_agg(role_name||' ['||defaclobjtype||'] '||grants,' ; '),'none') FROM defaults;
+ coalesce(string_agg(role_name||' ['||defaclobjtype::text||'] '||grants,' ; '),'none') FROM defaults;
