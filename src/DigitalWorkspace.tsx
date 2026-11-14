@@ -20,7 +20,6 @@ const products=[{value:'auto',label:'Automóveis'},{value:'imovel',label:'Imóve
 const lossReasons=[{value:'sem_interesse',label:'Sem interesse'},{value:'sem_orcamento',label:'Sem orçamento'},
  {value:'sem_retorno',label:'Sem retorno'},{value:'duplicado',label:'Duplicado'},{value:'outro',label:'Outro motivo'}] as const;
 function labelStage(stage:DigitalStage){return digitalStages.find(s=>s.value===stage)?.label||stage}
-function errorMessage(error:unknown){return error instanceof Error?error.message:String(error)}
 
 export default function DigitalWorkspace({client,companyId,userId,role,assignments,people,teams}:Props){
  const [items,setItems]=useState<DigitalOpportunity[]>([]);
@@ -62,7 +61,7 @@ export default function DigitalWorkspace({client,companyId,userId,role,assignmen
   e.preventDefault();setNotice('');setError('');
   if(!selected){setError('É necessário um vendedor vinculado a uma equipe ativa.');return;}
   const amount=Number(estimatedCredit);
-  if(!Number.isFinite(amount)||amount<0||amount>1000000000000||Math.round(amount*100)!==amount*100){
+  if(!Number.isFinite(amount)||amount<0||amount>1000000000000||Math.abs(Math.round(amount*100)-amount*100)>0.000001){
    setError('Informe valor estimado válido, com até duas casas decimais.');return;
   }
   setBusy(true);
