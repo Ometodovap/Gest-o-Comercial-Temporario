@@ -1,10 +1,11 @@
-import {useCallback,useEffect,useMemo,useState} from 'react';
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import type {FormEvent} from 'react';
 import {createClient} from '@supabase/supabase-js';
 import type {User} from '@supabase/supabase-js';
 import type {Assignment,Feedback,Membership,Report,ReportFields,Team,Shift,Status,MonthlyGoal,GoalNumbers,TeamGoal} from './types';
 import {teamCoverage,teamGoalFor,teamLeaderboard,teamMonthlyStats,teamRoster} from './teamPerformance';
 import DigitalWorkspace from './DigitalWorkspace';
+import {createScopeGuard,scopeKey} from './securityScope';
 import {brl,emptyFields,evolution,moveDay,NUMERIC_FIELDS,percent,summary,todayBrazil,validateFields} from './metrics';
 import {emptyGoal,goalForSeller,goalMetrics,goalProgress,managerTotals,monthDailyStats,monthlyReports,sellerMonthlyStats,validateGoal} from './goals';
 
@@ -40,6 +41,11 @@ export default function App(){
  const [assignments,setAssignments]=useState<Assignment[]>([]);const [people,setPeople]=useState<Membership[]>([]);
  const [reports,setReports]=useState<Report[]>([]);const [feedbacks,setFeedbacks]=useState<Feedback[]>([]);
  const [goals,setGoals]=useState<MonthlyGoal[]>([]);const [teamGoals,setTeamGoals]=useState<TeamGoal[]>([]);const [periodMonth,setPeriodMonth]=useState(today.slice(0,7));
+ const loadGate=useRef(createScopeGuard());
+ const [loadedScope,setLoadedScope]=useState('');
+ const currentScope=scopeKey(user?.id,companyId,periodMonth);
+ const liveScope=useRef(currentScope);
+ liveScope.current=currentScope;
  const [goalSeller,setGoalSeller]=useState('');const [goalDraft,setGoalDraft]=useState<GoalNumbers>({...emptyGoal});
  const [goalTeam,setGoalTeam]=useState('');const [teamGoalDraft,setTeamGoalDraft]=useState<GoalNumbers>({...emptyGoal});
  const [tab,setTab]=useState<Tab>('day');const [busy,setBusy]=useState(false);
@@ -87,7 +93,10 @@ export default function App(){
  useEffect(()=>{if(!supabase){setReady(true);return;}
   let active=true;
   supabase.auth.getUser().then(({data,error})=>{if(active){setUser(error?null:data.user);setReady(true)}});
-  const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{setUser(session?.user||null);setReady(true)});
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
+   loadGate.current.invalidate();setLoadedScope('');
+   setUser(session?.user||null);setReady(true);
+  });
   return ()=>{active=false;subscription.unsubscribe()};
  },[]);
  useEffect(()=>{if(!user||!supabase){setMemberships([]);setCompanyId('');return;}
@@ -101,7 +110,10 @@ export default function App(){
    });return()=>{active=false};
  },[user?.id]);
  const loadData=useCallback(async()=>{
-  if(!supabase||!companyId)return;
+  const requestScope=scopeKey(user?.id,companyId,periodMonth);
+  if(!supabase||!requestScope)return;
+  const ticket=loadGate.current.begin(requestScope);
+  setLoadedScope(previous=>previous===requestScope?previous:'');
   setBusy(true);
   try{
    const [c,t,a,p,r,f,g,tg]=await Promise.all([
@@ -116,11 +128,18 @@ export default function App(){
    ]);
    const err=[c,t,a,p,r,f,g,tg].find(x=>x.error)?.error;
    if(err)throw err;
+   if(!loadGate.current.isCurrent(ticket,liveScope.current))return;
    setCompanyName(c.data?.name||'Empresa');setTeamList((t.data||[]) as Team[]);
    setAssignments((a.data||[]) as Assignment[]);setPeople((p.data||[]) as Membership[]);
    setReports((r.data||[]) as Report[]);setFeedbacks((f.data||[]) as Feedback[]);setGoals((g.data||[]) as MonthlyGoal[]);setTeamGoals((tg.data||[]) as TeamGoal[]);
-  }catch(e){notify(`Falha ao consultar informações: ${e instanceof Error?e.message:(e&&typeof e==='object'&&'message' in e?String(e.message):String(e))}`,true)}finally{setBusy(false)}
- },[companyId,periodMonth]);
+   setLoadedScope(requestScope);
+  }catch(e){
+   if(loadGate.current.isCurrent(ticket,liveScope.current)){
+    setLoadedScope('');
+    notify(`Falha ao consultar informações: ${e instanceof Error?e.message:(e&&typeof e==='object'&&'message' in e?String(e.message):String(e))}`,true);
+   }
+  }finally{if(loadGate.current.isCurrent(ticket,liveScope.current))setBusy(false)}
+ },[companyId,periodMonth,user?.id]);
  useEffect(()=>{void loadData()},[loadData]);
  useEffect(()=>{
   const x=reports.find(r=>r.seller_id===user?.id&&r.work_date===workDate&&r.shift===shift);
@@ -138,7 +157,12 @@ export default function App(){
   const {error}=await supabase.auth.signInWithPassword({email:loginEmail,password:loginPassword});setBusy(false);
   if(error)notify('Não foi possível entrar: '+error.message,true);
  }
- async function logout(){await supabase?.auth.signOut();setTab('day');setMessage('');setProblem('')}
+ async function logout(){
+  loadGate.current.invalidate();setLoadedScope('');
+  const result=await supabase?.auth.signOut();
+  if(result?.error){notify('Não foi possível sair: '+result.error.message,true);return;}
+  setTab('day');setMessage('');setProblem('');
+ }
  async function saveReport(status:'draft'|'submitted'){
   if(!supabase||!user||!companyId)return;
   const error=validateFields(reportFields);if(error){notify(error,true);return;}
@@ -203,8 +227,9 @@ export default function App(){
  if(!ready)return <div className="setup">Carregando autenticação...</div>;
  if(!user)return <div className="login"><div className="login-card"><div className="brand-mark">⬡</div><h1>EPSA Gestão Comercial</h1><p>Gestão de produtividade e desenvolvimento comercial</p><form onSubmit={signIn}><label>E-mail<input type="email" autoComplete="username" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} required/></label><label>Senha<input type="password" autoComplete="current-password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} required/></label><button className="primary" disabled={busy}>Entrar</button></form>{problem&&<p className="error" role="alert">{problem}</p>}<small>O acesso é concedido pela administração da empresa. Não há autocadastro nesta versão.</small></div></div>;
  if(!membership)return <div className="setup"><h1>EPSA Gestão Comercial</h1>{problem&&<p className="error">{problem}</p>}<p>Usuário autenticado, mas sem empresa ativa vinculada ao módulo. A administração deve cadastrar a associação entre seu usuário e a empresa no projeto de desenvolvimento.</p><button onClick={logout}>Sair</button></div>;
+ if(loadedScope!==currentScope)return <div className="setup"><h1>EPSA Gestão Comercial</h1><p>Carregando informações autorizadas da empresa...</p>{problem&&<p className="error" role="alert">{problem}</p>}<button onClick={()=>void loadData()}>Tentar novamente</button><button onClick={logout}>Sair</button></div>;
  return <div className="layout"><aside className="sidebar"><div className="brand"><span className="brand-mark">⬡</span><div><b>EPSA Gestão</b><small>COMERCIAL</small></div></div><div className="sidebar-name">{companyName}</div><nav aria-label="Navegação principal">{tabItems.filter(x=>x.allowed).map(x=><button type="button" key={x.id} aria-current={tab===x.id?'page':undefined} className={tab===x.id?'nav-active':''} onClick={()=>{setTab(x.id);setMessage('');setProblem('')}}>{x.label}</button>)}</nav><div className="sidebar-bottom"><b>{membership.display_name}</b><small>{roles[role!]}</small><button onClick={logout}>Sair da conta</button></div></aside>
- <main className="content"><header className="topbar"><div><b>EPSA Core · Gestão Comercial</b><small>Presencial e digital • ambiente independente</small></div><div className="toolbar">{memberships.length>1&&<select aria-label="Empresa" value={companyId} onChange={e=>{setCompanyId(e.target.value);setReports([]);setGoals([]);setTeamGoals([]);setTeamList([]);setFeedbacks([]);setAssignments([]);setPeople([])}}>{memberships.map(m=><option key={m.company_id} value={m.company_id}>{companyChoices[m.company_id]||m.company_id.slice(0,8)}</option>)}</select>}<button className="secondary" disabled={busy} onClick={()=>void loadData()}>Atualizar</button></div></header>
+ <main className="content"><header className="topbar"><div><b>EPSA Core · Gestão Comercial</b><small>Presencial e digital • ambiente independente</small></div><div className="toolbar">{memberships.length>1&&<select aria-label="Empresa" value={companyId} onChange={e=>{loadGate.current.invalidate();setLoadedScope('');setCompanyId(e.target.value);setReports([]);setGoals([]);setTeamGoals([]);setTeamList([]);setFeedbacks([]);setAssignments([]);setPeople([])}}>{memberships.map(m=><option key={m.company_id} value={m.company_id}>{companyChoices[m.company_id]||m.company_id.slice(0,8)}</option>)}</select>}<button className="secondary" disabled={busy} onClick={()=>void loadData()}>Atualizar</button></div></header>
  <div className="page"><div className="hero"><div><small>EPSA GESTÃO COMERCIAL</small><h1>{tabItems.find(x=>x.id===tab)?.label}</h1><p>Atividades registradas, indicadores confiáveis e acompanhamento de resultados.</p></div><span>{companyName}<br/>{formatDate(today)}</span></div>
  {problem&&<div className="error" role="alert">{problem}</div>}{message&&<div className="success" role="status">{message}</div>}
  {(tab==='results'||tab==='goals'||tab==='productivity')&&<div className="period-bar"><label>Mês de referência <input type="month" value={periodMonth} onChange={e=>setPeriodMonth(e.target.value)}/></label><span>Indicadores: lançamentos enviados e validados. Ausência de registro não significa zero atendimentos ou zero vendas.</span></div>}
