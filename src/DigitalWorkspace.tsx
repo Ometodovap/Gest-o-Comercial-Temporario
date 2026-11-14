@@ -121,8 +121,9 @@ export default function DigitalWorkspace({client,companyId,userId,role,assignmen
   const stage=stageDraft[item.id]||item.stage;
   const reason=lossDraft[item.id]||item.lost_reason||'';
   const next=nextDraft[item.id]===undefined?item.next_action_on||'':nextDraft[item.id];
-  const amount=Number(creditDraft[item.id]===undefined?item.estimated_credit:creditDraft[item.id]);
-  if(!isValidCredit(amount)){setError('Crédito estimado inválido. Exemplo: 250000 equivale a R$ 250.000,00.');return;}
+  const creditValue=creditDraft[item.id]===undefined?String(item.estimated_credit):creditDraft[item.id];
+  const amount=Number(creditValue);
+  if(!creditValue.trim()||!isValidCredit(amount)){setError('Crédito estimado inválido. Exemplo: 250000 equivale a R$ 250.000,00.');return;}
   if(!validDigitalTransition(item.stage,stage)){setError('Não é permitido retroceder ou reabrir oportunidade encerrada.');return;}
   if(stage==='lost'&&!reason){setError('Selecione o motivo da perda.');return;}
   setBusy(true);
