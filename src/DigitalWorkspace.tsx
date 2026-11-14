@@ -105,7 +105,7 @@ export default function DigitalWorkspace({client,companyId,userId,role,assignmen
   e.preventDefault();setNotice('');setError('');
   if(!selected){setError('É necessário um vendedor vinculado a uma equipe ativa.');return;}
   const amount=Number(estimatedCredit);
-  if(!isValidCredit(amount)){setError('Crédito estimado inválido. Use, por exemplo, 250000 para R$ 250.000,00.');return;}
+  if(!estimatedCredit.trim()||!isValidCredit(amount)){setError('Crédito estimado inválido. Use, por exemplo, 250000 para R$ 250.000,00.');return;}
   setBusy(true);
   const {error}=await client.from('gc_digital_opportunities').insert({
    company_id:companyId,team_id:selected.team_id,seller_id:selected.seller_id,
