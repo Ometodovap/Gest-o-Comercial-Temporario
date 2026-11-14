@@ -32,3 +32,7 @@ export type TeamGoal = {
  created_at:string;updated_at:string;created_by:string;updated_by:string;
 };
 export type DigitalStage = 'prospecting' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';
+
+/** Referência sem dados pessoais para oportunidades digitais em homologação. */
+export type DigitalSource='site'|'whatsapp'|'ads'|'social'|'indicacao'|'outro';
+export type DigitalProduct='auto'|'imovel';
