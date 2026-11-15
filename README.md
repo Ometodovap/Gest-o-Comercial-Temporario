@@ -1,6 +1,16 @@
-# EPSA Gestão Comercial v0.12 — proteção de privilégios e acesso revogado
+# EPSA Gestão Comercial v0.13 — Administração controlada
 
 **Ambiente de homologação independente**, conectado somente ao Supabase **Gestao Comercial Temporario** (`tilrqwcymhghmpvxukur`). Não use dados reais de clientes nesta fase. O EPSA Core e a GVS não são alterados por este projeto.
+
+## Novidades da v0.13 — Administração controlada
+
+- Menu **Administração** visível à supervisão e direção. Supervisores consultam stands e vendedores autorizados. Somente **diretoria ativa** cria/edita empresas, stands, equipes e vínculos.
+- Diretoria pode criar empresas fictícias (limite de 3 em 30 dias), gerenciar nome, stands/supervisores, vincular usuários fictícios que já existam no **Supabase Auth**, suspender membros e transferir vendedores entre stands.
+- Migração `gc_admin_foundation_v013` aplicada no projeto Supabase temporário `tilrqwcymhghmpvxukur` (versão `20261115150937`): cinco RPCs expostas como **SECURITY INVOKER**, com validação privilegiada em schema não exposto e auditoria privada.
+- Testes em transações revertidas: vendedor e supervisor não podem executar operações da diretoria; diretoria temporária pode administrar empresa e stand; transferência de usuário ativo de outra empresa e alteração do próprio papel são bloqueadas.
+- Nenhuma das empresas fictícias tem atualmente conta de diretoria. Não promover automaticamente Ana, Marcos, Bia ou Carla. A escrita administrativa aguardará provisionamento de uma conta de direção.
+- **Não cria usuários Auth nem envia convites. Não recebe informações reais de clientes.** Preserva dados de homologação, EPSA Core e GVS.
+- Documentação e checklist: `docs/ADMINISTRACAO_V013.md`. Não faça merge até validar a interface.
 
 ## Novidades da v0.12 — permissões e revogação de acesso
 
