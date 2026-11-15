@@ -4,6 +4,7 @@
 
 ## Novidades da v0.18 — Gráficos e comparativo mês anterior x atual
 
+- **Filtro por vendedor:** opção 'Toda a equipe (consolidado)' ou vendedor individual autorizado, aplicando o filtro simultaneamente a KPIs, comparação mês a mês, gráfico histórico e metas individuais. Vendedores transferidos continuam visíveis pelo histórico do stand autorizado, quando sua conta segue ativa.
 - **Painel gerencial → Comparativo direto:** gráficos de barras lado a lado para **atendimentos, compradores, cotas, créditos e conversão imediata**, comparando a competência selecionada ao mês imediatamente anterior.
 - Variações para indicadores quantitativos ou financeiros são exibidas em porcentagem, somente quando existe base anterior válida e diferente de zero; conversão sempre é comparada em **pontos percentuais (p.p.)**.
 - **Evolução de seis meses interativa:** escolha o indicador a visualizar, com gráfico atualizado na própria página e tabela mensal completa abaixo.
