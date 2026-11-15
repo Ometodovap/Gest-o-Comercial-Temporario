@@ -12,6 +12,13 @@ Acesse **Painel gerencial**, exclusivamente como supervisor ou Diretoria ativa. 
 - Somente fechamentos enviados ou validados, com abrangência da empresa e stands permitidos. Digital permanece independente.
 - Se a leitura carregar 1.000 registros, bloquear gráficos do painel para evitar resultados truncados.
 
+### Filtro individual por vendedor
+O seletor “Vendedor” inicia em **Toda a equipe (consolidado)**. Exibe somente vendedores ativos na empresa com vínculo atual ou produção histórica nos stands autorizados. Ao escolher uma pessoa, o painel mostra apenas seus fechamentos válidos e suas metas individuais (em vez de apresentar metas consolidadas dos stands como se fossem individuais).
+
+Na Empresa Piloto A, Ana Martins deve apresentar 20 atendimentos, 5 compradores, 6 cotas, R$ 480.000 e conversão imediata de 20,0% para novembro/2026. A equipe consolidada deve continuar exibindo seus dados normalmente. Um vendedor sem fechamento válido deve apresentar “Sem registros”, não zero produtividade.
+
+A filtragem é aplicada também dentro do cálculo (empresa, stand histórico e ID do vendedor), não apenas em controles visuais. Vendedores sem vínculo à equipe, inativos ou de outra empresa não devem aparecer no seletor.
+
 ## Verificações manuais na Cloudflare Preview
 1. Acessar como Marcos Pereira, navegar até **Painel gerencial** e escolher novembro/2026. Deve mostrar 20 atendimentos, 5 compradores, 6 cotas, R$ 480.000 e conversão 20,0%.
 2. No comparativo outubro x novembro, outubro deve aparecer como **Sem base** enquanto não houver fechamento de outubro; não mostrar um crescimento inventado de 0% a 20%.
