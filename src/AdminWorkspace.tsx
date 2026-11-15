@@ -2,6 +2,7 @@ import {useEffect,useMemo,useState} from 'react';
 import type {FormEvent} from 'react';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import type {Assignment,Membership,Role,Team} from './types';
+import AdminAudit from './AdminAudit';
 
 type Props={
  client:SupabaseClient; companyId:string; companyName:string; userId:string;
@@ -18,6 +19,7 @@ type InvitePreview={valid:boolean;sending_enabled:boolean;already_invited:boolea
 export default function AdminWorkspace({client,companyId,companyName,userId,role,teams,people,assignments,onRefresh}:Props){
  const canEdit=role==='manager';
  const [busy,setBusy]=useState(false);
+ const [auditRefresh,setAuditRefresh]=useState(0);
  const [error,setError]=useState('');
  const [notice,setNotice]=useState('');
  const [newCompany,setNewCompany]=useState('');
@@ -43,6 +45,7 @@ export default function AdminWorkspace({client,companyId,companyName,userId,role
    if(rpcError)throw new Error(rpcError.message);
    after?.();
    await onRefresh();
+   setAuditRefresh(x=>x+1);
    setNotice(success);
   }catch(e){setError(e instanceof Error?e.message:String(e))}
   finally{setBusy(false)}
@@ -211,6 +214,7 @@ export default function AdminWorkspace({client,companyId,companyName,userId,role
     <label>Nova empresa fictícia<input value={newCompany} onChange={e=>setNewCompany(e.target.value)} minLength={2} maxLength={180} required placeholder="Empresa Piloto C"/></label>
    </div><button className="primary" disabled={busy}>Cadastrar empresa</button></form>
   </section>}
+  {canEdit&&<AdminAudit client={client} companyId={companyId} refreshVersion={auditRefresh}/>}
   <section className="panel"><h2>Governança do piloto</h2>
    <p>Esta versão permite pré-validar convites pelo servidor, mas mantém o envio de e-mails bloqueado até a homologação do SMTP. Não cria usuários Auth sem envio autorizado, não altera senhas e não permite concessão de diretoria pela interface. Não utilize dados de clientes reais. Operações administrativas ficam registradas em auditoria privada no banco.</p>
    <button className="secondary" type="button" onClick={()=>void onRefresh()} disabled={busy}>Atualizar estrutura da empresa</button>

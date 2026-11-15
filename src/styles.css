@@ -112,3 +112,10 @@
 .gc-admin-form .primary,.gc-admin-form .secondary{margin-top:8px}
 .gc-admin .mini-stats{flex-wrap:wrap}
 @media(max-width:800px){.gc-admin-form{padding:12px}.gc-admin-form .form-grid{grid-template-columns:1fr}}
+
+/* v0.15 — eventos administrativos */
+.gc-admin-audit-toolbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin:18px 0}
+.gc-admin-audit-toolbar>span{font-size:12px;color:#7185a2}
+.gc-admin-audit-empty{padding:16px;background:#f7faff;border:1px solid #d7e3f1;border-radius:10px;color:#5f7896}
+.gc-admin-audit .table-scroll{max-height:470px;overflow:auto}
+.gc-admin-audit .table-scroll td:first-child{white-space:nowrap}
