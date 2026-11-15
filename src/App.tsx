@@ -128,7 +128,8 @@ export default function App(){
     loadGate.current.invalidate();setLoadedScope('');
    }
    setUser(session?.user||null);setReady(true);
-   if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED'||event==='MFA_CHALLENGE_VERIFIED')setMfaRevision(n=>n+1);
+   // SIGNED_IN também dispara ao retomar foco na mesma sessão; não desmontar a tela nesse evento.
+   if(event==='TOKEN_REFRESHED'||event==='MFA_CHALLENGE_VERIFIED')setMfaRevision(n=>n+1);
   });
   return ()=>{active=false;subscription.unsubscribe()};
  },[]);
