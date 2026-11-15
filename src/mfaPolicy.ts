@@ -1,5 +1,5 @@
 /** Regras puras de MFA: o servidor é responsável pelo enforcement definitivo. */
-export type AssuranceLevel='aal1'|'aal2'|null;
+export type AssuranceLevel=string|null;
 export function requiresMfaChallenge(currentLevel:AssuranceLevel,nextLevel:AssuranceLevel):boolean{
  return currentLevel==='aal1'&&nextLevel==='aal2';
 }
