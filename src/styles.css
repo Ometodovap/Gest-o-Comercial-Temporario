@@ -168,3 +168,8 @@
 .mg-chart-six-row>span{font-size:12px;color:#375d7e;overflow-wrap:anywhere}
 @media(max-width:720px){.mg-chart-six-row{grid-template-columns:90px minmax(60px,1fr) 120px;gap:8px}.mg-comparison-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}}
 @media(max-width:490px){.mg-comparison-grid{grid-template-columns:1fr}.mg-chart-six-row{grid-template-columns:86px minmax(0,1fr)}.mg-chart-six-row>span{grid-column:2}.mg-chart-choice{flex:1 1 auto}}
+
+/* v0.18 — filtro de vendedor na visão gerencial */
+.mg-seller-selector{max-width:420px;margin-top:18px}
+.mg-seller-selector label{display:grid;gap:8px;font-size:13px;font-weight:700;color:#294968}
+.mg-seller-selector select{width:100%;background:#fff;color:#123657;border:1px solid #c5d7e9;border-radius:9px;padding:12px 14px}
