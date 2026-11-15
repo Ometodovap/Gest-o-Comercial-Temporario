@@ -23,6 +23,7 @@
     "../src/accessMembership.ts",
     "../src/monthlyExport.ts",
     "../src/managementInsights.ts",
-    "../src/managementCharts.ts"
+    "../src/managementCharts.ts",
+    "../src/feedbackReview.ts"
   ]
 }
