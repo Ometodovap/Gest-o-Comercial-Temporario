@@ -83,3 +83,10 @@ test('v0.18: painel usa filtros e permissões existentes, com gráficos próprio
  assert.match(ui,/aria-pressed/);
  assert.match(app,/tab==='management'&&\(role==='manager'\|\|role==='supervisor'\)/);
 });
+
+test('v0.18.1: cartão da conversão identifica pontos percentuais sem repetir a variação',()=>{
+ const ui=fs.readFileSync(path.join(__dirname,'../src/ManagementCharts.tsx'),'utf8');
+ assert.match(ui,/option\.key==='conversion'\s*\?'Diferença de conversão: '\+signedVariation\(item\.delta,'p\.p\.'\)/);
+ assert.match(ui,/option\.key!=='conversion'\|\|item\.delta===null/);
+ assert.match(ui,/option\.key==='conversion'\?signedVariation\(item\.delta,'p\.p\.'\)/);
+});
