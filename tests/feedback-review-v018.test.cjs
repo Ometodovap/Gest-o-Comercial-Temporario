@@ -21,7 +21,7 @@ test('avaliação qualitativa sem base exige observação escrita',async()=>{
 });
 test('interface submete a mesma regra e diferencia o acompanhamento qualitativo',()=>{
  const s=fs.readFileSync(path.join(__dirname,'../src/App.tsx'),'utf8');
- assert.match(s,/reviewGate\(f.review_date,todayBrazil\(\),e.available,notes\)/);
+ assert.match(s,/reviewGate\(f.review_date,todayBrazil\(\),metrics.available,notes\)/);
  assert.match(s,/if\(!gate.reviewDue\)/);
  assert.match(s,/if\(!gate.canSubmit\)/);
  assert.match(s,/Revisão agendada para/);
