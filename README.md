@@ -1,6 +1,17 @@
-# EPSA Gestão Comercial v0.17 — Painel gerencial de desempenho
+# EPSA Gestão Comercial v0.18 — Gráficos gerenciais e comparativo mensal
 
 **Ambiente de homologação independente**, conectado somente ao Supabase **Gestao Comercial Temporario** (`tilrqwcymhghmpvxukur`). Não use dados reais de clientes nesta fase. O EPSA Core e a GVS não são alterados por este projeto.
+
+## Novidades da v0.18 — Gráficos e comparativo mês anterior x atual
+
+- **Filtro por vendedor:** opção 'Toda a equipe (consolidado)' ou vendedor individual autorizado, aplicando o filtro simultaneamente a KPIs, comparação mês a mês, gráfico histórico e metas individuais. Vendedores transferidos continuam visíveis pelo histórico do stand autorizado, quando sua conta segue ativa.
+- **Painel gerencial → Comparativo direto:** gráficos de barras lado a lado para **atendimentos, compradores, cotas, créditos e conversão imediata**, comparando a competência selecionada ao mês imediatamente anterior.
+- Variações para indicadores quantitativos ou financeiros são exibidas em porcentagem, somente quando existe base anterior válida e diferente de zero; conversão sempre é comparada em **pontos percentuais (p.p.)**.
+- **Evolução de seis meses interativa:** escolha o indicador a visualizar, com gráfico atualizado na própria página e tabela mensal completa abaixo.
+- Sem fechamento válido é exibido como **"Sem base"** / **"Sem registros"**. Não se inventa desempenho zero, crescimento porcentual a partir de base zero ou taxa de conversão quando novos atendimentos são zero.
+- Mantidos os mesmos controles de acesso à Supervisão/Diretoria, isolamento por empresa e stands autorizados, RLS do Supabase e proteção para histórico atingindo limite de 1.000 registros.
+- O funil de vendas digitais continua separado do painel presencial. Nenhuma nova tabela, migração ou alteração nos bancos EPSA Core e GVS.
+- Roteiro de homologação: `docs/PAINEL_GERENCIAL_V018.md`.
 
 ## Novidades da v0.17 — Painel gerencial presencial
 

@@ -22,6 +22,7 @@
     "../src/securityScope.ts",
     "../src/accessMembership.ts",
     "../src/monthlyExport.ts",
-    "../src/managementInsights.ts"
+    "../src/managementInsights.ts",
+    "../src/managementCharts.ts"
   ]
 }

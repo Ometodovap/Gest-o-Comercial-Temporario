@@ -1,7 +1,9 @@
-import type {Report,Role,Team,TeamGoal} from './types';
+import {useState} from 'react';
+import type {Assignment,Membership,MonthlyGoal,Report,Role,Team,TeamGoal} from './types';
 import {brl,percent} from './metrics';
-import {goalProgress} from './goals';
-import {buyerDifference,managementOverview,ppDifference} from './managementInsights';
+import {goalForSeller,goalMetrics,goalProgress} from './goals';
+import {buyerDifference,managementOverview,managementSellerOptions,ppDifference} from './managementInsights';
+import {ManagementMonthComparison,ManagementTrendChart} from './ManagementCharts';
 
 const metricNames={
  goal_atendimentos:'Atendimentos',
@@ -20,13 +22,19 @@ function signed(number:number):string{
 function moneyOrCount(key:string,value:number):string{
  return key==='goal_creditos'?brl(value):value.toLocaleString('pt-BR');
 }
-export default function ManagementDashboard({role,companyId,month,reports,teams,teamGoals}:{
+export default function ManagementDashboard({role,companyId,month,reports,teams,teamGoals,people,assignments,sellerGoals}:{
  role:Role;companyId:string;month:string;reports:Report[];teams:Team[];teamGoals:TeamGoal[];
+ people:Membership[];assignments:Assignment[];sellerGoals:MonthlyGoal[];
 }){
+ const [selectedSellerId,setSelectedSellerId]=useState('');
  if(role==='seller')return null;
+ const sellers=managementSellerOptions({companyId,teams,assignments,people,reports});
+ const activeSeller=sellers.find(x=>x.user_id===selectedSellerId);
+ const sellerId=activeSeller?.user_id;
  const overview=managementOverview({
   companyId,month,reports,teams,goals:teamGoals,
-  allowedTeamIds:teams.map(x=>x.id)
+  allowedTeamIds:teams.map(x=>x.id),
+  sellerId
  });
  if(overview.incomplete){
   return <section className="panel" role="alert">
@@ -39,13 +47,24 @@ export default function ManagementDashboard({role,companyId,month,reports,teams,
  const last=months[months.length-2];
  const buyersDelta=buyerDifference(selected,previous);
  const conversionDelta=ppDifference(selected,previous);
- const maxBuyers=Math.max(1,...months.filter(x=>x.stats.hasRecords).map(x=>x.stats.compradores));
+ const sellerGoal=sellerId?goalForSeller(sellerGoals,sellerId,month):undefined;
  return <>
   <section className="panel">
-   <h2>Visão executiva presencial — {formatMonth(month)}</h2>
+   <h2>Visualização dos resultados</h2>
+   <p>Consulte a equipe inteira ou selecione um vendedor. O filtro afeta a visão executiva, o comparativo mensal, os gráficos e a evolução de seis meses, sem incluir produção de outros stands ou empresas.</p>
+   <div className="mg-seller-selector"><label>Vendedor
+    <select aria-label="Filtrar resultados por vendedor" value={sellerId||''} onChange={e=>setSelectedSellerId(e.target.value)}>
+     <option value="">Toda a equipe (consolidado)</option>
+     {sellers.map(person=><option key={person.user_id} value={person.user_id}>{person.display_name}</option>)}
+    </select>
+   </label></div>
+   <p className="mg-footnote">{sellerId?'Resultados individuais de '+activeSeller?.display_name+' nos stands sob sua responsabilidade.':'Resultados consolidados dos stands autorizados.'}</p>
+  </section>
+  <section className="panel">
+   <h2>Visão executiva presencial — {sellerId?activeSeller?.display_name+' · ':''}{formatMonth(month)}</h2>
    <p>Indicadores exclusivamente dos stands autorizados para sua função. Somente fechamentos enviados e validados entram nos resultados; vendas por retorno compõem compradores, mas não a conversão imediata.</p>
    <div className="mini-stats">
-    <span>{stands.length} stand(s) autorizados</span>
+    <span>{sellerId?'Vendedor selecionado':'Toda a equipe'} · {stands.length} stand(s) autorizados</span>
     <span>{selected.fechamentos} fechamento(s) válido(s) na competência</span>
     <span>{selected.pendentes} pendente(s) de validação</span>
    </div>
@@ -58,19 +77,11 @@ export default function ManagementDashboard({role,companyId,month,reports,teams,
     <div><small>Créditos</small><strong>{brl(selected.valor_creditos)}</strong></div>
    </div>}
   </section>
+  <ManagementMonthComparison current={selected} previous={previous} currentMonth={month} previousMonth={last.month}/>
   <section className="panel">
    <h2>Evolução de seis meses — presencial</h2>
-   <p>As barras representam clientes compradores por competência. A conversão é calculada sobre o total de vendas imediatas dividido pelo total de novos atendimentos de cada mês, nunca pela média das taxas dos vendedores.</p>
-   <div className="mg-trend" role="group" aria-label="Evolução de seis meses de clientes compradores">
-    {months.map(({month:reference,stats})=><div className="mg-trend-row" key={reference}>
-     <b>{formatMonth(reference)}</b>
-     <div className="mg-trend-track" title={stats.hasRecords?String(stats.compradores)+' compradores':'Sem fechamentos enviados/validados'}>
-      {stats.hasRecords&&<div className="mg-trend-fill" style={{width:String(Math.min(100,stats.compradores/maxBuyers*100))+'%'}}/>}
-     </div>
-     <span>{stats.hasRecords?String(stats.compradores)+' compradores':'Sem registros'}</span>
-     <span>{stats.hasRecords?percent(stats.conversion):'—'} conv.</span>
-    </div>)}
-   </div>
+   <p>Escolha o indicador para visualizar sua evolução por competência. As taxas de conversão são sempre calculadas pelos totais de vendas imediatas e novos atendimentos, sem média de taxas entre vendedores.</p>
+   <ManagementTrendChart months={months}/>
    <div className="table-scroll"><table>
     <thead><tr><th>Mês</th><th>Atendimentos</th><th>Compradores</th><th>Cotas</th><th>Créditos</th><th>Conversão imediata</th></tr></thead>
     <tbody>{months.map(({month:reference,stats})=><tr key={reference}>
@@ -84,7 +95,7 @@ export default function ManagementDashboard({role,companyId,month,reports,teams,
    </table></div>
    <p className="mg-footnote">Meses sem registros não são contabilizados como zero desempenho. O cálculo inclui todos os stands atualmente autorizados ao seu perfil, respeitando o stand original de cada lançamento.</p>
   </section>
-  <section className="panel">
+  {!sellerId&&<section className="panel">
    <h2>Comparação entre stands — {formatMonth(month)}</h2>
    <p>Ordenação por número de compradores, com desempate por cotas e valor dos créditos. Stands sem fechamentos são identificados separadamente; não recebem classificação de desempenho.</p>
    <div className="table-scroll"><table>
@@ -105,8 +116,8 @@ export default function ManagementDashboard({role,companyId,month,reports,teams,
     {stands.length===0&&<tr><td colSpan={8}>Nenhum stand autorizado para comparação.</td></tr>}
     </tbody>
    </table></div>
-  </section>
-  <section className="panel">
+  </section>}
+  {!sellerId&&<section className="panel">
    <h2>Atingimento de metas próprias dos stands</h2>
    <p>As metas de equipe são independentes das metas dos vendedores. Uma meta ausente não equivale a zero; só calculamos o percentual consolidado quando todos os stands autorizados possuem meta positiva para aquele indicador.</p>
    <div className="mg-goals">{targets.map(t=><div className="mg-goal" key={t.key}>
@@ -119,7 +130,25 @@ export default function ManagementDashboard({role,companyId,month,reports,teams,
      <small>{!selected.hasRecords?'Sem fechamento válido para calcular atingimento':'Meta incompleta: '+t.configured+'/'+t.total+' stand(s) com meta definida'}</small>
     }
    </div>)}</div>
-  </section>
+  </section>}
+  {sellerId&&<section className="panel">
+   <h2>Metas individuais — {activeSeller?.display_name}</h2>
+   <p>Metas do vendedor são independentes das metas próprias dos stands. Indicadores sem meta definida aparecem como “Sem meta”.</p>
+   <div className="mg-goals">{goalMetrics.map(item=>{
+    const target=Number(sellerGoal?.[item.key]||0);
+    const actual=item.actual==='compradores'?selected.compradores:selected[item.actual];
+    const progression=selected.hasRecords&&target>0?goalProgress(actual,target):null;
+    return <div className="mg-goal" key={item.key}>
+     <b>{item.label}</b>
+     <div>{selected.hasRecords?moneyOrCount(item.key,actual):'Sem registros'}
+      <span> / {target>0?moneyOrCount(item.key,target):'Sem meta'}</span></div>
+     {progression!==null?<><div className="goal-track" role="progressbar" aria-label={item.label} aria-valuemin={0} aria-valuemax={Math.max(100,Math.ceil(progression))} aria-valuenow={Math.round(progression)}>
+      <div className="goal-fill" style={{width:Math.max(0,Math.min(100,progression))+'%'}}/>
+     </div><small>{progression.toFixed(1).replace('.',',')}% da meta alcançado</small></>:
+      <small>{!selected.hasRecords?'Sem fechamento válido para calcular atingimento':'Meta individual não definida'}</small>}
+    </div>;
+   })}</div>
+  </section>}
   <section className="panel">
    <h2>Operação digital — acompanhamento separado</h2>
    <p>Este painel analisa apenas a operação presencial dos stands. O funil de vendas digitais possui etapas, atividades e indicadores próprios na opção <b>Vendas digitais</b> do menu; os números não são somados automaticamente, evitando dupla contagem.</p>

@@ -141,3 +141,35 @@
 .mg-goal small{font-size:11px;color:#627e99;line-height:1.5}
 @media(max-width:850px){.mg-trend-row{grid-template-columns:95px minmax(75px,1fr) 110px;gap:9px}.mg-trend-row>span:last-child{grid-column:2 / -1;text-align:right}}
 @media(max-width:530px){.mg-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.mg-trend-row{grid-template-columns:88px minmax(0,1fr);gap:7px}.mg-trend-row>span:nth-last-child(2){grid-column:2}.mg-trend-row>span:last-child{grid-column:2;text-align:left}.mg-goals{grid-template-columns:1fr}}
+
+/* v0.18 — comparativos mês a mês e gráficos dinâmicos de indicadores presenciais */
+.mg-comparison-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:14px;margin:20px 0}
+.mg-comparison-item{border:1px solid #d9e6f2;background:#fbfdff;border-radius:12px;padding:16px;min-width:0;display:grid;align-content:start;gap:12px}
+.mg-comparison-item h3{font-size:14px;color:#153858;margin:0 0 4px}
+.mg-compare-bar-row{display:grid;gap:6px}
+.mg-compare-bar-meta{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:5px;font-size:13px}
+.mg-compare-bar-meta small{font-size:12px;color:#69809c}
+.mg-compare-bar-meta strong{color:#13365b;overflow-wrap:anywhere}
+.mg-compare-track{height:12px;background:#e6edf5;border-radius:999px;overflow:hidden}
+.mg-compare-prev,.mg-compare-current{height:100%;border-radius:999px;max-width:100%}
+.mg-compare-prev{background:#829db8}
+.mg-compare-current{background:linear-gradient(90deg,#277db5,#16a377)}
+.mg-compare-difference{border-top:1px solid #dbe5f0;padding-top:10px;display:grid;gap:4px;font-size:12px;color:#284e73}
+.mg-compare-difference small{font-size:12px;color:#607c98;line-height:1.45}
+.mg-chart-container{margin:18px 0 22px}
+.mg-chart-choices{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.mg-chart-choice{border:1px solid #cddced;border-radius:10px;background:#f6f9fe;color:#1b4368;font-weight:600;padding:9px 12px;font-size:12px}
+.mg-chart-choice:hover{background:#e7f2fa}
+.mg-chart-choice-active,.mg-chart-choice-active:hover{background:#12385d;color:#fff;border-color:#12385d}
+.mg-chart-heading{font-weight:700;color:#15385d;margin-bottom:16px}
+.mg-chart-six{display:grid;gap:14px}
+.mg-chart-six-row{display:grid;grid-template-columns:100px minmax(80px,1fr) 150px;gap:14px;align-items:center}
+.mg-chart-six-row>b{font-size:12px;color:#173b61}
+.mg-chart-six-row>span{font-size:12px;color:#375d7e;overflow-wrap:anywhere}
+@media(max-width:720px){.mg-chart-six-row{grid-template-columns:90px minmax(60px,1fr) 120px;gap:8px}.mg-comparison-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}}
+@media(max-width:490px){.mg-comparison-grid{grid-template-columns:1fr}.mg-chart-six-row{grid-template-columns:86px minmax(0,1fr)}.mg-chart-six-row>span{grid-column:2}.mg-chart-choice{flex:1 1 auto}}
+
+/* v0.18 — filtro de vendedor na visão gerencial */
+.mg-seller-selector{max-width:420px;margin-top:18px}
+.mg-seller-selector label{display:grid;gap:8px;font-size:13px;font-weight:700;color:#294968}
+.mg-seller-selector select{width:100%;background:#fff;color:#123657;border:1px solid #c5d7e9;border-radius:9px;padding:12px 14px}
