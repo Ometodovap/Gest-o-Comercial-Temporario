@@ -1,4 +1,4 @@
-import type {Report,Team,TeamGoal,GoalNumbers} from './types';
+import type {Assignment,Membership,Report,Team,TeamGoal,GoalNumbers} from './types';
 import {summary} from './metrics.js';
 import {goalProgress} from './goals.js';
 
@@ -9,6 +9,7 @@ export type ManagerScope={
  teams:Team[];
  goals:TeamGoal[];
  allowedTeamIds:string[];
+ sellerId?:string;
 };
 export type ManagerMetrics=ReturnType<typeof summary>&{
  compradores:number;
@@ -43,6 +44,26 @@ const goalFields=[
  {key:'goal_cotas',actual:'cotas'},
  {key:'goal_creditos',actual:'valor_creditos'}
 ] as const;
+
+/** Opções autorizadas: associação atual ao stand ou produção histórica nele;
+ * a pessoa também precisa estar ativa na empresa consultada. */
+export function managementSellerOptions({
+ companyId,teams,assignments,people,reports
+}:{
+ companyId:string;teams:Team[];assignments:Assignment[];people:Membership[];reports:Report[];
+}):{user_id:string;display_name:string}[]{
+ const authorizedTeams=new Set(teams.filter(t=>t.company_id===companyId).map(t=>t.id));
+ const linked=new Set<string>();
+ for(const item of assignments){
+  if(item.company_id===companyId&&item.active&&authorizedTeams.has(item.team_id))linked.add(item.seller_id);
+ }
+ for(const report of reports){
+  if(report.company_id===companyId&&authorizedTeams.has(report.team_id))linked.add(report.seller_id);
+ }
+ return people.filter(p=>p.company_id===companyId&&p.active&&p.role==='seller'&&linked.has(p.user_id))
+  .map(p=>({user_id:p.user_id,display_name:p.display_name}))
+  .sort((a,b)=>a.display_name.localeCompare(b.display_name,'pt-BR'));
+}
 
 export function monthsEnding(month:string,count=6):string[]{
  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)||!Number.isInteger(count)||count<1||count>12){
@@ -80,6 +101,7 @@ export function managementOverview(scope:ManagerScope):ManagerOverview{
  // Nunca confiar apenas na filtragem da tela: exige empresa e stand autorizado.
  const authorized=scope.reports.filter(r=>
   r.company_id===scope.companyId&&scoped.has(r.team_id)&&
+  (!scope.sellerId||r.seller_id===scope.sellerId)&&
   months[0]<=r.work_date.slice(0,7)&&r.work_date.slice(0,7)<=scope.month
  );
  const timeline=months.map(month=>({
