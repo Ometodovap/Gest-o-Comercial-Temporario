@@ -1,6 +1,16 @@
-# EPSA Gestão Comercial v0.13 — Administração controlada
+# EPSA Gestão Comercial v0.14 — convites controlados em homologação
 
 **Ambiente de homologação independente**, conectado somente ao Supabase **Gestao Comercial Temporario** (`tilrqwcymhghmpvxukur`). Não use dados reais de clientes nesta fase. O EPSA Core e a GVS não são alterados por este projeto.
+
+## Novidades da v0.14 — convite com pré-validação segura
+
+- Diretoria pode preparar e pré-validar um convite fictício (nome, e-mail, função) diretamente na Administração, sem copiar UID do Supabase Auth.
+- `gc-invite-user` valida sessão Supabase pelo Auth, confere papel `manager` ativo da empresa no banco, valida entrada e verifica duplicidade de convites com log privado.
+- **Envio real desativado por padrão** até configuração explícita de `GC_INVITES_ENABLED=true`, `GC_MAIL_READY=true` e `GC_INVITE_REDIRECT_URL` HTTPS da aplicação publicada; não criar contas nem disparar e-mails durante o piloto.
+- Preparação para envio futuro via `auth.admin.inviteUserByEmail` roda apenas na Edge Function, nunca no navegador. Depois do envio, o vínculo é criado pela RPC da v0.13 sob a identidade da Diretoria; falhas ficam registradas para reconciliação manual.
+- Migração `gc_secure_invite_history_v014` aplicada apenas no Supabase temporário, com RLS sem policies de usuário e privilégios de leitura/gravação restritos ao papel interno `service_role`. **Não reenviar manualmente a migração**.
+- Não mexe nos bancos EPSA Core e GVS e não aceita dados reais de clientes nesta etapa.
+- Consulte `docs/CONVITES_V014.md` para implantação, limitações e homologação.
 
 ## Novidades da v0.13 — Administração controlada
 
