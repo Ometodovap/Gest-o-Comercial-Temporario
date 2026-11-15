@@ -21,6 +21,7 @@
     "../src/digitalManagement.ts",
     "../src/securityScope.ts",
     "../src/accessMembership.ts",
-    "../src/monthlyExport.ts"
+    "../src/monthlyExport.ts",
+    "../src/managementInsights.ts"
   ]
 }
