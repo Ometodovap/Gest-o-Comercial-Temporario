@@ -11,6 +11,7 @@ import {buildClosuresCsv,buildStandsCsv,exportFilename} from './monthlyExport';
 import {createScopeGuard,scopeKey} from './securityScope';
 import {activeMembershipFingerprint} from './accessMembership';
 import {MfaChallenge,MfaSettings} from './MfaSecurity';
+import {ForgotPassword,SetRecoveredPassword} from './PasswordRecovery';
 import {requiresMfaChallenge} from './mfaPolicy';
 import {reviewGate} from './feedbackReview';
 import {brl,emptyFields,evolution,moveDay,NUMERIC_FIELDS,percent,summary,todayBrazil,validateFields} from './metrics';
@@ -48,6 +49,8 @@ export default function App(){
  useEffect(()=>{mfaGateRef.current=mfaGate},[mfaGate]);
  const [ready,setReady]=useState(false);
  const [loginEmail,setLoginEmail]=useState('');const [loginPassword,setLoginPassword]=useState('');
+ const [resetRequestOpen,setResetRequestOpen]=useState(false);
+ const [recoveryMode,setRecoveryMode]=useState(false);
  const [memberships,setMemberships]=useState<Membership[]>([]);const [companyId,setCompanyId]=useState('');
  const [companyName,setCompanyName]=useState('');const [companyChoices,setCompanyChoices]=useState<Record<string,string>>({});const [teamList,setTeamList]=useState<Team[]>([]);
  const [assignments,setAssignments]=useState<Assignment[]>([]);const [people,setPeople]=useState<Membership[]>([]);
@@ -130,6 +133,8 @@ export default function App(){
     loadGate.current.invalidate();setLoadedScope('');
    }
    setUser(session?.user||null);setReady(true);
+   if(event==='PASSWORD_RECOVERY'){setRecoveryMode(true);setResetRequestOpen(false);}
+   if(event==='SIGNED_OUT')setRecoveryMode(false);
    // SIGNED_IN também dispara ao retomar foco na mesma sessão; não desmontar a tela nesse evento.
    // Ao testar um segundo dispositivo com sessão já aal2, não desmontar o painel comercial.
    if(event==='TOKEN_REFRESHED'||(event==='MFA_CHALLENGE_VERIFIED'&&mfaGateRef.current!=='ready'))setMfaRevision(n=>n+1);
@@ -293,6 +298,13 @@ export default function App(){
   const {error}=await supabase.auth.signInWithPassword({email:loginEmail,password:loginPassword});setBusy(false);
   if(error)notify('Não foi possível entrar: '+error.message,true);
  }
+ async function completeRecovery(){
+  if(!supabase)return;
+  const result=await supabase.auth.signOut();
+  if(result.error){notify('Senha alterada, mas não foi possível encerrar a sessão: '+result.error.message,true);return;}
+  setRecoveryMode(false);setResetRequestOpen(false);setLoginPassword('');
+  notify('Senha alterada. Entre novamente com a nova senha.');
+ }
  async function logout(){
   loadGate.current.invalidate();setLoadedScope('');
   const result=await supabase?.auth.signOut();
@@ -371,7 +383,15 @@ export default function App(){
  const teamName=(id:string)=>teamList.find(x=>x.id===id)?.name||'Equipe';
  if(!url||!key)return <div className="setup"><h1>EPSA Gestão Comercial</h1><p>Versão preparada para conectar a um Supabase de desenvolvimento isolado.</p><p>Configure <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> em <code>.env</code>. Não use a chave <code>service_role</code>.</p></div>;
  if(!ready)return <div className="setup">Carregando autenticação...</div>;
- if(!user)return <div className="login"><div className="login-card"><div className="brand-mark">⬡</div><h1>EPSA Gestão Comercial</h1><p>Gestão de produtividade e desenvolvimento comercial</p><form onSubmit={signIn}><label>E-mail<input type="email" autoComplete="username" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} required/></label><label>Senha<input type="password" autoComplete="current-password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} required/></label><button className="primary" disabled={busy}>Entrar</button></form>{problem&&<p className="error" role="alert">{problem}</p>}<small>O acesso é concedido pela administração da empresa. Não há autocadastro nesta versão.</small></div></div>;
+ if(!user){
+  if(resetRequestOpen&&supabase)return <ForgotPassword client={supabase} email={loginEmail} setEmail={setLoginEmail} onBack={()=>{setResetRequestOpen(false);setProblem('')}}/>;
+  return <div className="login"><div className="login-card"><div className="brand-mark">⬡</div><h1>EPSA Gestão Comercial</h1><p>Gestão de produtividade e desenvolvimento comercial</p>
+   <form onSubmit={signIn}><label>E-mail<input type="email" autoComplete="username" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} required/></label><label>Senha<input type="password" autoComplete="current-password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} required/></label><button className="primary" disabled={busy}>Entrar</button></form>
+   <button type="button" className="secondary" onClick={()=>{setProblem('');setResetRequestOpen(true)}}>Esqueci minha senha</button>
+   {message&&<p className="success" role="status">{message}</p>}{problem&&<p className="error" role="alert">{problem}</p>}
+   <small>O acesso é concedido pela administração da empresa. Não há autocadastro nesta versão.</small></div></div>;
+ }
+ if(recoveryMode&&supabase)return <SetRecoveredPassword client={supabase} onCompleted={()=>void completeRecovery()}/>;
  if(mfaGate==='checking')return <div className="setup"><h1>EPSA Gestão Comercial</h1><p>Verificando segurança da sessão...</p></div>;
  if(mfaGate==='error')return <div className="setup"><h1>Verificação de segurança indisponível</h1><p role="alert">{mfaProblem}</p><button type="button" onClick={()=>setMfaRevision(n=>n+1)}>Tentar novamente</button><button type="button" onClick={()=>void logout()}>Sair da conta</button></div>;
  if(mfaGate==='challenge'&&supabase)return <MfaChallenge client={supabase} onVerified={()=>setMfaRevision(n=>n+1)} onLogout={()=>void logout()}/>;
