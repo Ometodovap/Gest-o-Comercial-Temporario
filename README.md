@@ -1,6 +1,16 @@
-# EPSA Gestão Comercial v0.15 — auditoria administrativa
+# EPSA Gestão Comercial v0.16 — exportação mensal em CSV
 
 **Ambiente de homologação independente**, conectado somente ao Supabase **Gestao Comercial Temporario** (`tilrqwcymhghmpvxukur`). Não use dados reais de clientes nesta fase. O EPSA Core e a GVS não são alterados por este projeto.
+
+## Novidades da v0.16 — CSV comercial para Excel
+
+- **Resultados → Exportar fechamentos CSV:** utiliza somente os lançamentos autorizados da empresa e mês selecionados; para vendedor, somente seus próprios registros; para supervisão/diretoria, apenas stands sob responsabilidade.
+- **Produtividade por stand → Exportar stands CSV:** resumo das equipes autorizadas e suas metas independentes.
+- CSV com codificação UTF-8, BOM e delimitador ponto e vírgula para Excel em português, decimal com vírgula e neutralização de células com início de fórmula.
+- Inclui apenas fechamentos `submitted`/`validated`, nunca rascunhos ou devoluções; sem anotações, cliente, telefone ou outros dados pessoais de consumidores.
+- Se o limite atual de 1.000 lançamentos do painel for atingido, o download fica bloqueado para não apresentar um relatório incompleto.
+- Nenhuma migração de banco necessária. Ambiente de homologação permanece com dados fictícios.
+- Checklist: `docs/EXPORTACAO_V016.md`; PR em draft para validação visual antes de integrar à `main`.
 
 ## Novidades da v0.15 — Histórico administrativo protegido
 

@@ -20,6 +20,7 @@
     "../src/digitalInsights.ts",
     "../src/digitalManagement.ts",
     "../src/securityScope.ts",
-    "../src/accessMembership.ts"
+    "../src/accessMembership.ts",
+    "../src/monthlyExport.ts"
   ]
 }
