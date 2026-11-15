@@ -2,6 +2,7 @@ import type {Report,Role,Team,TeamGoal} from './types';
 import {brl,percent} from './metrics';
 import {goalProgress} from './goals';
 import {buyerDifference,managementOverview,ppDifference} from './managementInsights';
+import {ManagementMonthComparison,ManagementTrendChart} from './ManagementCharts';
 
 const metricNames={
  goal_atendimentos:'Atendimentos',
@@ -39,7 +40,6 @@ export default function ManagementDashboard({role,companyId,month,reports,teams,
  const last=months[months.length-2];
  const buyersDelta=buyerDifference(selected,previous);
  const conversionDelta=ppDifference(selected,previous);
- const maxBuyers=Math.max(1,...months.filter(x=>x.stats.hasRecords).map(x=>x.stats.compradores));
  return <>
   <section className="panel">
    <h2>Visão executiva presencial — {formatMonth(month)}</h2>
@@ -58,19 +58,11 @@ export default function ManagementDashboard({role,companyId,month,reports,teams,
     <div><small>Créditos</small><strong>{brl(selected.valor_creditos)}</strong></div>
    </div>}
   </section>
+  <ManagementMonthComparison current={selected} previous={previous} currentMonth={month} previousMonth={last.month}/>
   <section className="panel">
    <h2>Evolução de seis meses — presencial</h2>
-   <p>As barras representam clientes compradores por competência. A conversão é calculada sobre o total de vendas imediatas dividido pelo total de novos atendimentos de cada mês, nunca pela média das taxas dos vendedores.</p>
-   <div className="mg-trend" role="group" aria-label="Evolução de seis meses de clientes compradores">
-    {months.map(({month:reference,stats})=><div className="mg-trend-row" key={reference}>
-     <b>{formatMonth(reference)}</b>
-     <div className="mg-trend-track" title={stats.hasRecords?String(stats.compradores)+' compradores':'Sem fechamentos enviados/validados'}>
-      {stats.hasRecords&&<div className="mg-trend-fill" style={{width:String(Math.min(100,stats.compradores/maxBuyers*100))+'%'}}/>}
-     </div>
-     <span>{stats.hasRecords?String(stats.compradores)+' compradores':'Sem registros'}</span>
-     <span>{stats.hasRecords?percent(stats.conversion):'—'} conv.</span>
-    </div>)}
-   </div>
+   <p>Escolha o indicador para visualizar sua evolução por competência. As taxas de conversão são sempre calculadas pelos totais de vendas imediatas e novos atendimentos, sem média de taxas entre vendedores.</p>
+   <ManagementTrendChart months={months}/>
    <div className="table-scroll"><table>
     <thead><tr><th>Mês</th><th>Atendimentos</th><th>Compradores</th><th>Cotas</th><th>Créditos</th><th>Conversão imediata</th></tr></thead>
     <tbody>{months.map(({month:reference,stats})=><tr key={reference}>
