@@ -44,6 +44,8 @@ export default function App(){
  const [mfaGate,setMfaGate]=useState<'checking'|'ready'|'challenge'|'error'>('checking');
  const [mfaProblem,setMfaProblem]=useState('');
  const [mfaRevision,setMfaRevision]=useState(0);
+ const mfaGateRef=useRef(mfaGate);
+ useEffect(()=>{mfaGateRef.current=mfaGate},[mfaGate]);
  const [ready,setReady]=useState(false);
  const [loginEmail,setLoginEmail]=useState('');const [loginPassword,setLoginPassword]=useState('');
  const [memberships,setMemberships]=useState<Membership[]>([]);const [companyId,setCompanyId]=useState('');
@@ -129,7 +131,8 @@ export default function App(){
    }
    setUser(session?.user||null);setReady(true);
    // SIGNED_IN também dispara ao retomar foco na mesma sessão; não desmontar a tela nesse evento.
-   if(event==='TOKEN_REFRESHED'||event==='MFA_CHALLENGE_VERIFIED')setMfaRevision(n=>n+1);
+   // Ao testar um segundo dispositivo com sessão já aal2, não desmontar o painel comercial.
+   if(event==='TOKEN_REFRESHED'||(event==='MFA_CHALLENGE_VERIFIED'&&mfaGateRef.current!=='ready'))setMfaRevision(n=>n+1);
   });
   return ()=>{active=false;subscription.unsubscribe()};
  },[]);

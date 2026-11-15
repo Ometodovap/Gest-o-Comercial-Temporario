@@ -182,3 +182,8 @@
 .mfa-setup .mfa-qr{display:block;width:220px;max-width:100%;height:auto;object-fit:contain;background:#fff;border:1px solid #e0e9f2;padding:8px;border-radius:8px}
 .mfa-setup label{display:grid;gap:8px;overflow-wrap:anywhere;color:#24486c}
 .mfa-setup .actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* v0.20 — assistência ao segundo autenticador e verificação de reserva */
+.mfa-alert{border-left:3px solid #f59e0b;background:#fff7e9;color:#7b4a08;padding:14px 16px;border-radius:8px;line-height:1.5;margin-top:12px}
+.mfa-factor-list{display:grid;gap:6px;padding-left:20px;margin:12px 0;color:#2d506e;font-size:13px}
+.mfa-setup select{width:100%;border:1px solid #c5d7e9;border-radius:9px;background:#fff;color:#15385d;padding:12px}

@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react';
 import type {FormEvent} from 'react';
 import type {SupabaseClient} from '@supabase/supabase-js';
-import {isTotpCode} from './mfaPolicy';
+import {canTestBackup,isTotpCode} from './mfaPolicy';
 
 type Factor={id:string;friendly_name?:string|null;status:string};
 const errorMessage=(error:unknown)=>error instanceof Error?error.message:'Não foi possível concluir a operação de autenticação.';
@@ -72,6 +72,9 @@ export function MfaSettings({client,onEnrolled}:{client:SupabaseClient;onEnrolle
  const [success,setSuccess]=useState('');
  const [pending,setPending]=useState<{id:string;qr:string;secret:string}|null>(null);
  const [code,setCode]=useState('');
+ const [backupFactorId,setBackupFactorId]=useState('');
+ const [backupCode,setBackupCode]=useState('');
+ const [backupTested,setBackupTested]=useState('');
  async function refresh(){
   const response=await client.auth.mfa.listFactors();
   if(response.error)throw response.error;
@@ -89,7 +92,7 @@ export function MfaSettings({client,onEnrolled}:{client:SupabaseClient;onEnrolle
  async function startEnrollment(){
   setBusy(true);setError('');setSuccess('');
   try{
-   const result=await client.auth.mfa.enroll({factorType:'totp',friendlyName:'EPSA Gestão Comercial'});
+   const result=await client.auth.mfa.enroll({factorType:'totp',friendlyName:factors.length>0?'EPSA Reserva':'EPSA Principal'});
    if(result.error)throw result.error;
    setPending({id:result.data.id,qr:result.data.totp.qr_code,secret:result.data.totp.secret});
    setCode('');
@@ -107,6 +110,7 @@ export function MfaSettings({client,onEnrolled}:{client:SupabaseClient;onEnrolle
    if(verification.error)throw verification.error;
    setPending(null);setCode('');
    await refresh();
+   setBackupTested('');
    setSuccess('Aplicativo autenticador ativado. Nos próximos acessos será necessário informar o código.');
    onEnrolled();
   }catch(e){setError(errorMessage(e));setCode('')}
@@ -122,6 +126,23 @@ export function MfaSettings({client,onEnrolled}:{client:SupabaseClient;onEnrolle
   }catch(e){setError(errorMessage(e))}
   finally{setBusy(false)}
  }
+ async function verifyBackup(event:FormEvent){
+  event.preventDefault();
+  if(busy||!canTestBackup(factors,backupFactorId,backupCode))return;
+  setBusy(true);setError('');setSuccess('');setBackupTested('');
+  try{
+   const assurance=await client.auth.mfa.getAuthenticatorAssuranceLevel();
+   if(assurance.error)throw assurance.error;
+   if(assurance.data.currentLevel!=='aal2')throw new Error('Confirme o segundo fator do seu login antes de testar o autenticador de reserva.');
+   const challenge=await client.auth.mfa.challenge({factorId:backupFactorId});
+   if(challenge.error)throw challenge.error;
+   const verification=await client.auth.mfa.verify({factorId:backupFactorId,challengeId:challenge.data.id,code:backupCode.trim()});
+   if(verification.error)throw verification.error;
+   setBackupTested(backupFactorId);
+   setBackupCode('');
+  }catch(e){setError(errorMessage(e));setBackupCode('')}
+  finally{setBusy(false)}
+ }
  const qrSrc=pending?(pending.qr.startsWith('data:image/svg+xml')?pending.qr:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(pending.qr)):'';
  return <section className="panel">
   <h2>Segurança da conta — autenticação em duas etapas</h2>
@@ -129,11 +150,32 @@ export function MfaSettings({client,onEnrolled}:{client:SupabaseClient;onEnrolle
   <p className="mg-footnote">A exigência obrigatória no servidor será ativada somente após os testes de recuperação e de permissões. Os cadastros de usuários existentes não serão alterados automaticamente.</p>
   {loading?<p>Consultando autenticação...</p>:<>
    <p><b>Autenticadores verificados:</b> {factors.length}</p>
-   {factors.length>0&&<p className="success">Você já possui um segundo fator cadastrado. Para reduzir o risco de perda de acesso, mantenha um segundo autenticador em dispositivo independente.</p>}
+   {factors.length===1&&<p className="mfa-alert" role="status">Atenção: apenas um autenticador verificado. Cadastre outro em dispositivo independente antes de depender do MFA para a operação real.</p>}
+   {factors.length>1&&<p className="success">Existem {factors.length} autenticadores cadastrados. Verifique o segundo dispositivo abaixo; o cadastro por si só não comprova que os dispositivos são independentes.</p>}
+   {factors.length>0&&<ul className="mfa-factor-list">{factors.map((factor,index)=><li key={factor.id}>{factor.friendly_name||'Autenticador '+(index+1)} — verificado</li>)}</ul>}
    {!pending&&<button type="button" className="primary" disabled={busy} onClick={()=>void startEnrollment()}>
     {factors.length>0?'Cadastrar autenticador de reserva':'Configurar aplicativo autenticador'}
    </button>}
   </>}
+  {!loading&&factors.length>=2&&!pending&&<div className="mfa-setup">
+   <h3>Testar autenticador de reserva</h3>
+   <p>Escolha o autenticador instalado em outro dispositivo, gere um código nele e teste o funcionamento sem removê-lo nem alterar os demais fatores.</p>
+   <form onSubmit={verifyBackup}>
+    <label>Autenticador a testar
+     <select value={backupFactorId} onChange={e=>{setBackupFactorId(e.target.value);setBackupTested('');setBackupCode('')}} required>
+      <option value="">Selecione o dispositivo de reserva...</option>
+      {factors.map((factor,index)=><option key={factor.id} value={factor.id}>{factor.friendly_name||'Autenticador '+(index+1)}</option>)}
+     </select>
+    </label>
+    <label>Código de 6 dígitos deste autenticador
+     <input type="text" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} autoComplete="one-time-code"
+      value={backupCode} onChange={e=>setBackupCode(e.target.value.replace(/[^0-9]/g,'').slice(0,6))} placeholder="000000" required/>
+    </label>
+    <button type="submit" className="primary" disabled={busy||!canTestBackup(factors,backupFactorId,backupCode)}>{busy?'Verificando...':'Testar autenticador'}</button>
+   </form>
+   {backupTested&&<p className="success" role="status">Código do autenticador selecionado confirmado nesta sessão. Certifique-se de que ele está em um dispositivo independente.</p>}
+   <p className="mg-footnote">Este teste comprova a validade do código, mas não comprova fisicamente que os aplicativos estejam em aparelhos diferentes. Não compartilhe QR Code, chave privada ou código.</p>
+  </div>}
   {pending&&<div className="mfa-setup">
    <h3>Ativar autenticador</h3>
    <p>1. Abra Google Authenticator, Microsoft Authenticator, 1Password ou aplicativo compatível.</p>
