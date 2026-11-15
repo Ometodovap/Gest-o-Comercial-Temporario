@@ -21,8 +21,8 @@ A filtragem é aplicada também dentro do cálculo (empresa, stand histórico e 
 
 ## Verificações manuais na Cloudflare Preview
 1. Acessar como Marcos Pereira, navegar até **Painel gerencial** e escolher novembro/2026. Deve mostrar 20 atendimentos, 5 compradores, 6 cotas, R$ 480.000 e conversão 20,0%.
-2. No comparativo outubro x novembro, outubro deve aparecer como **Sem base** enquanto não houver fechamento de outubro; não mostrar um crescimento inventado de 0% a 20%.
-3. Na evolução de seis meses, escolher cada indicador e verificar que novembro mostra, respectivamente: 20; 5; 6; R$ 480.000; 20,0%. Meses anteriores sem fechamentos apresentam **Sem registros**.
+2. No comparativo outubro x novembro, conferir **outubro com base válida** (10 atendimentos, 2 compradores, 3 cotas, R$ 240.000, conversão imediata de 10,0%) e **novembro** (20, 5, 6, R$ 480.000, 20,0%). Variações esperadas: +100%, +150%, +100%, +100% e **+10,0 p.p.** de conversão. Na interface, a conversão deve ser rotulada como **Diferença de conversão**, não como diferença absoluta em porcentagem.
+3. Na evolução de seis meses, escolher cada indicador e verificar que novembro mostra, respectivamente: 20; 5; 6; R$ 480.000; 20,0% e outubro mostra 10; 2; 3; R$ 240.000; 10,0%. Somente os meses anteriores sem fechamentos apresentam **Sem registros**.
 4. Simular outro mês sem dados, confirmando que não aparece taxa de 0% nem comparação percentual inventada.
 5. Na conta de Ana Martins (vendedor), a opção **Painel gerencial** deve permanecer ausente.
 6. Na conta de Carla Souza (Empresa Parceira B), não deve aparecer nenhum fechamento da Empresa Piloto A.
