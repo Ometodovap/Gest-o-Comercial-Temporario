@@ -19,3 +19,11 @@ Escopo: somente EPSA Gestão Comercial, banco Supabase **Gestão Comercial Tempo
 ## Limites
 - Sistema de homologação com dados fictícios.
 - Os avisos do Security Advisor, políticas de MFA e outros requisitos de operação com clientes reais permanecem pendentes.
+
+## Verificação executada em 15/11/2026
+
+- Migração do banco de homologação registrada como **20261115203335_gc_feedback_review_due_guard_v018**; SQL versionado em `supabase/migrations/20261115203335_gc_feedback_review_due_guard_v018.sql`. Não reexecutar manualmente.
+- Leitura da função confirmou `SECURITY INVOKER` e `search_path` vazio, preservando demais regras do trigger existente.
+- Teste transacional, como supervisor Marcos Pereira, tentou registrar revisão antes de 20/11/2026: **bloqueado** com a mensagem esperada; `ROLLBACK` executado.
+- Teste de RLS como Carla Souza (Empresa Parceira B) retornou zero fechamentos e zero feedbacks da Empresa Piloto A; Ana Martins visualizou seus dois fechamentos e o próprio feedback.
+- GitHub Actions: CI com `npm ci`, `npm audit --audit-level=high`, `npm test` e `npm run build` aprovado na branch; Cloudflare Preview com deploy bem-sucedido.
