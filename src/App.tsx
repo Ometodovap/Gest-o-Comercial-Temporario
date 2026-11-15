@@ -10,6 +10,7 @@ import AdminWorkspace from './AdminWorkspace';
 import {buildClosuresCsv,buildStandsCsv,exportFilename} from './monthlyExport';
 import {createScopeGuard,scopeKey} from './securityScope';
 import {activeMembershipFingerprint} from './accessMembership';
+import {reviewGate} from './feedbackReview';
 import {brl,emptyFields,evolution,moveDay,NUMERIC_FIELDS,percent,summary,todayBrazil,validateFields} from './metrics';
 import {emptyGoal,goalForSeller,goalMetrics,goalProgress,managerTotals,monthDailyStats,monthlyReports,sellerMonthlyStats,validateGoal} from './goals';
 
@@ -303,10 +304,20 @@ export default function App(){
   const {error}=await supabase.from('gc_coaching_feedback').update({acknowledged_at:new Date().toISOString()}).eq('id',f.id).is('acknowledged_at',null).select('id').single();
   setBusy(false);if(error){notify(error.message,true);return;}notify('Leitura confirmada.');await loadData();
  }
- async function saveReview(f:Feedback){if(!supabase)return;const v=reviewStatus[f.id];if(!v){notify('Selecione uma avaliação.',true);return;}
+ async function saveReview(f:Feedback){
+  if(!supabase)return;
+  const notes=(reviewNotes[f.id]||'').trim();
+  const metrics=evolution(f,reports,todayBrazil());
+  const gate=reviewGate(f.review_date,todayBrazil(),metrics.available,notes);
+  if(!gate.reviewDue){notify('A revisão só pode ser registrada na data agendada ou depois.',true);return;}
+  const status=reviewStatus[f.id];
+  if(!status){notify('Selecione uma avaliação.',true);return;}
+  if(!gate.canSubmit){notify('Sem comparação estatística suficiente, descreva a avaliação qualitativa nas observações.',true);return;}
   setBusy(true);
-  const {error}=await supabase.from('gc_coaching_feedback').update({review_status:v,review_notes:(reviewNotes[f.id]||'').trim(),reviewed_at:new Date().toISOString()}).eq('id',f.id).is('reviewed_at',null).select('id').single();
-  setBusy(false);if(error){notify(error.message,true);return;}notify('Revisão registrada.');await loadData();
+  const {error}=await supabase.from('gc_coaching_feedback').update({review_status:status,review_notes:notes,reviewed_at:new Date().toISOString()}).eq('id',f.id).is('reviewed_at',null).select('id').single();
+  setBusy(false);
+  if(error){notify(error.message,true);return;}
+  notify('Revisão registrada.');await loadData();
  }
  async function saveGoal(e:FormEvent){e.preventDefault();if(!supabase||!companyId||!user||role==='seller'||!goalSeller)return;
   if(!availableSellers.some(s=>s.user_id===goalSeller)){notify('Vendedor fora da sua equipe autorizada.',true);return;}
@@ -366,6 +377,31 @@ export default function App(){
  {tab==='team'&&role!=='seller'&&<section className="panel"><h2>Fechamentos da equipe</h2><p>Valide os registros enviados ou devolva com uma orientação. O supervisor não altera quantidades do vendedor.</p><div className="cards">{reports.filter(r=>r.status==='submitted').map(r=><article className="activity" key={r.id}><header><b>{name(r.seller_id)}</b><span>{formatDate(r.work_date)} · {teamName(r.team_id)}</span></header><div className="mini-stats"><span>{r.atendimentos} atendimentos</span><span>{r.vendas_imediatas} vendas imediatas</span><span>{r.vendas_retorno} por retorno</span><span>{r.cotas} cotas</span></div><label>Motivo de devolução<input placeholder="Informe apenas se for devolver" maxLength={500} value={returnReasons[r.id]||''} onChange={e=>setReturnReasons(o=>({...o,[r.id]:e.target.value}))}/></label><div className="actions"><button disabled={busy} className="secondary" onClick={()=>void reviewReport(r,'returned')}>Devolver</button><button disabled={busy} className="primary" onClick={()=>void reviewReport(r,'validated')}>Validar lançamento</button></div></article>)}{!reports.some(r=>r.status==='submitted')&&<p>Não há lançamentos aguardando validação entre seus registros autorizados.</p>}</div></section>}
  {tab==='feedback'&&<>{role!=='seller'&&<section className="panel"><h2>Nova orientação</h2><form onSubmit={createFeedback}><div className="form-grid"><label>Vendedor<select value={feedbackSeller} onChange={e=>setFeedbackSeller(e.target.value)}>{availableSellers.map(p=><option key={p.user_id} value={p.user_id}>{p.display_name}</option>)}</select></label><label>Indicador observado<input maxLength={100} value={indicator} onChange={e=>setIndicator(e.target.value)} required/></label><label>Início do período<input type="date" value={periodStart} onChange={e=>setPeriodStart(e.target.value)} required/></label><label>Fim do período<input type="date" value={periodEnd} onChange={e=>setPeriodEnd(e.target.value)} required/></label><label>Data de revisão<input type="date" value={reviewDate} onChange={e=>setReviewDate(e.target.value)} required/></label></div><label>Diagnóstico e contexto<textarea required minLength={2} maxLength={700} value={diagnosis} onChange={e=>setDiagnosis(e.target.value)} rows={3}/></label><label>Ação combinada<textarea required minLength={2} maxLength={700} value={actionPlan} onChange={e=>setActionPlan(e.target.value)} rows={3}/></label><button disabled={busy||!feedbackSeller} className="primary">Registrar feedback e ação</button></form></section>}
  <section className="panel"><h2>{role==='seller'?'Orientações recebidas':'Histórico de feedbacks'}</h2><p>Confirmação de leitura significa recebimento, não concordância automática.</p><div className="cards">{feedbacks.map(f=><article className="activity" key={f.id}><header><b>{f.indicator} — {name(f.seller_id)}</b><span>{f.acknowledged_at?'Leitura confirmada':'Aguardando leitura'}</span></header><small>Período: {formatDate(f.period_start)} a {formatDate(f.period_end)} · Revisão {formatDate(f.review_date)}</small><p><b>Diagnóstico:</b> {f.diagnosis}</p><div className="callout"><b>Ação combinada</b><p>{f.action_plan}</p></div>{role==='seller'&&!f.acknowledged_at&&<button className="secondary" disabled={busy} onClick={()=>void acknowledge(f)}>Confirmar leitura</button>}{f.reviewed_at&&<div className="success">Revisão: {f.review_status==='improved'?'Melhorou':f.review_status==='stable'?'Estável':'Precisa de acompanhamento'} · {f.review_notes||'Sem observações adicionais'}</div>}</article>)}{feedbacks.length===0&&<p>Não há orientações registradas ainda.</p>}</div></section></>}
- {tab==='evolution'&&<section className="panel"><h2>Evolução após as orientações</h2><p>Janelas de até sete dias antes e depois. São necessários três dias com registros válidos em cada janela; a comparação não prova causalidade.</p><div className="cards">{feedbacks.map(f=>{const e=evolution(f,reports,today);return <article key={f.id} className="activity"><header><b>{f.indicator} — {name(f.seller_id)}</b><span>{formatDate(f.review_date)}</span></header><div className="mini-stats"><span>Antes: {percent(e.before.conversion)} ({e.before.days} dias)</span><span>Depois: {percent(e.after.conversion)} ({e.after.days} dias)</span><span>{e.available&&e.delta!==null?`Variação: ${e.delta.toFixed(1)} p.p.`:'Dados ainda insuficientes'}</span></div><p><b>Ação:</b> {f.action_plan}</p>{f.reviewed_at?<div className="success">Revisão registrada: {f.review_notes||f.review_status}</div>:role!=='seller'&&<><label>Avaliação<select value={reviewStatus[f.id]||''} onChange={ev=>setReviewStatus(o=>({...o,[f.id]:ev.target.value as 'improved'|'stable'|'needs_support'}))}><option value="">Selecione...</option><option value="improved">Melhorou</option><option value="stable">Estável</option><option value="needs_support">Precisa de acompanhamento</option></select></label><label>Observações<textarea rows={2} maxLength={700} value={reviewNotes[f.id]||''} onChange={ev=>setReviewNotes(o=>({...o,[f.id]:ev.target.value}))}/></label><button disabled={busy} className="primary" onClick={()=>void saveReview(f)}>Registrar revisão</button></>}</article>})}{feedbacks.length===0&&<p>Sem feedbacks para comparar.</p>}</div></section>}
+ {tab==='evolution'&&<section className="panel">
+  <h2>Evolução após as orientações</h2>
+  <p>Janelas de até sete dias antes e depois. São necessários três dias com registros válidos em cada janela; a comparação não prova causalidade.</p>
+  <div className="cards">{feedbacks.map(f=>{
+   const e=evolution(f,reports,todayBrazil());
+   const gate=reviewGate(f.review_date,todayBrazil(),e.available,reviewNotes[f.id]||'');
+   return <article key={f.id} className="activity">
+    <header><b>{f.indicator} — {name(f.seller_id)}</b><span>{formatDate(f.review_date)}</span></header>
+    <div className="mini-stats">
+     <span>Antes: {percent(e.before.conversion)} ({e.before.days} dias)</span>
+     <span>Depois: {percent(e.after.conversion)} ({e.after.days} dias)</span>
+     <span>{e.available&&e.delta!==null?`Variação: ${e.delta.toFixed(1)} p.p.`:'Dados ainda insuficientes'}</span>
+    </div>
+    <p><b>Ação:</b> {f.action_plan}</p>
+    {f.reviewed_at?<div className="success">Revisão registrada: {f.review_notes||f.review_status}</div>:
+     role!=='seller'&&(gate.reviewDue?<>
+      {!e.available&&<p className="mg-footnote">Avaliação qualitativa: ainda não existem três dias válidos antes e depois. Relate as observações em campo; isso não comprova evolução estatística.</p>}
+      <label>Avaliação<select value={reviewStatus[f.id]||''} onChange={ev=>setReviewStatus(o=>({...o,[f.id]:ev.target.value as 'improved'|'stable'|'needs_support'}))}>
+       <option value="">Selecione...</option><option value="improved">Melhorou</option><option value="stable">Estável</option><option value="needs_support">Precisa de acompanhamento</option>
+      </select></label>
+      <label>Observações{gate.notesRequired?' (obrigatórias sem base estatística)':''}<textarea rows={2} maxLength={700} value={reviewNotes[f.id]||''} onChange={ev=>setReviewNotes(o=>({...o,[f.id]:ev.target.value}))}/></label>
+      <button disabled={busy||!gate.canSubmit||!reviewStatus[f.id]} className="primary" onClick={()=>void saveReview(f)}>Registrar revisão</button>
+     </>:<div className="callout"><b>Revisão agendada para {formatDate(f.review_date)}</b><p>A avaliação ficará disponível nessa data. Continue registrando os fechamentos diários para permitir uma comparação confiável.</p></div>)}
+   </article>;
+  })}{feedbacks.length===0&&<p>Sem feedbacks para comparar.</p>}</div>
+ </section>}
  <footer>EPSA Gestão Comercial v0.18 — Ambiente Supabase de homologação, dados fictícios. Não usar dados reais.</footer></div></main></div>;
 }
