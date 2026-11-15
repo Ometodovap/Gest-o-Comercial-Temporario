@@ -13,6 +13,8 @@ const roles:Record<Role,string>={seller:'Vendedor(a)',supervisor:'Supervisor(a)'
 const blankMember={userId:'',name:'',role:'seller' as 'seller'|'supervisor',active:true};
 const blankTeam={id:'',name:'',unit:'',supervisor:''};
 type RpcArgs=Record<string,unknown>;
+type InviteRole='seller'|'supervisor';
+type InvitePreview={valid:boolean;sending_enabled:boolean;already_invited:boolean;email:string;display_name:string;role:InviteRole;message:string};
 export default function AdminWorkspace({client,companyId,companyName,userId,role,teams,people,assignments,onRefresh}:Props){
  const canEdit=role==='manager';
  const [busy,setBusy]=useState(false);
@@ -25,11 +27,13 @@ export default function AdminWorkspace({client,companyId,companyName,userId,role
  const [assignmentTeam,setAssignmentTeam]=useState('');
  const [assignmentSeller,setAssignmentSeller]=useState('');
  const [assignmentActive,setAssignmentActive]=useState(true);
+ const [inviteDraft,setInviteDraft]=useState({email:'',name:'',role:'seller' as InviteRole});
+ const [invitePreview,setInvitePreview]=useState<InvitePreview|null>(null);
  const supervisors=useMemo(()=>people.filter(x=>x.company_id===companyId&&x.active&&x.role==='supervisor'),[people,companyId]);
  const sellers=useMemo(()=>people.filter(x=>x.company_id===companyId&&x.active&&x.role==='seller'),[people,companyId]);
  const visibleTeams=useMemo(()=>role==='manager'?teams:teams.filter(t=>t.supervisor_user_id===userId),[teams,role,userId]);
  useEffect(()=>{setCompanyDraft(companyName)},[companyName]);
- useEffect(()=>{setError('');setNotice('');setTeamDraft({...blankTeam});setMemberDraft({...blankMember})},[companyId]);
+ useEffect(()=>{setError('');setNotice('');setTeamDraft({...blankTeam});setMemberDraft({...blankMember});setInvitePreview(null);setInviteDraft({email:'',name:'',role:'seller'})},[companyId]);
  const name=(id:string|null)=>id?people.find(x=>x.user_id===id)?.display_name||'Usuário autorizado':'Não designado';
  async function runRpc(rpc:string,args:RpcArgs,success:string,after?:()=>void){
   if(!canEdit){setError('Operação reservada à diretoria.');return;}
@@ -74,6 +78,41 @@ export default function AdminWorkspace({client,companyId,companyName,userId,role
    p_company_id:companyId,p_team_id:assignmentTeam,p_seller_id:assignmentSeller,p_active:assignmentActive
   },assignmentActive?'Vendedor vinculado ao stand. O histórico não foi reescrito.':'Vínculo com o stand suspenso.');
  }
+ async function previewInvite(e:FormEvent){
+  e.preventDefault();
+  if(!canEdit){setError('Operação reservada à diretoria.');return;}
+  setBusy(true);setError('');setNotice('');setInvitePreview(null);
+  try{
+   const {data,error:requestError}=await client.functions.invoke('gc-invite-user',{
+    body:{action:'preview',company_id:companyId,email:inviteDraft.email.trim(),display_name:inviteDraft.name.trim(),role:inviteDraft.role}
+   });
+   if(requestError)throw new Error('Não foi possível validar o convite. Confirme sua sessão e a função de convites.');
+   const preview=data as InvitePreview;
+   if(!preview?.valid)throw new Error('O servidor não aprovou os dados do convite.');
+   setInvitePreview(preview);
+   setNotice(preview.message);
+  }catch(e){setError(e instanceof Error?e.message:String(e))}
+  finally{setBusy(false)}
+ }
+ async function sendInvite(){
+  if(!canEdit||!invitePreview?.sending_enabled||invitePreview.already_invited)return;
+  if(invitePreview.email!==inviteDraft.email.trim().toLowerCase()||
+     invitePreview.display_name!==inviteDraft.name.trim()||
+     invitePreview.role!==inviteDraft.role){setInvitePreview(null);setError('Valide novamente os dados alterados.');return;}
+  if(!window.confirm('Confirmar envio de convite para '+invitePreview.email+'? Esta ação enviará um e-mail.'))return;
+  setBusy(true);setError('');setNotice('');
+  try{
+   const {data,error:requestError}=await client.functions.invoke('gc-invite-user',{
+    body:{action:'send',company_id:companyId,email:invitePreview.email,display_name:invitePreview.display_name,role:invitePreview.role}
+   });
+   if(requestError)throw new Error('Não foi possível concluir o envio; consulte o registro de auditoria antes de tentar novamente.');
+   if(!data?.sent)throw new Error('O servidor não confirmou o envio.');
+   setInvitePreview(null);setInviteDraft({email:'',name:'',role:'seller'});
+   setNotice(data.message||'Convite enviado e vínculo confirmado.');
+   await onRefresh();
+  }catch(e){setError(e instanceof Error?e.message:String(e))}
+  finally{setBusy(false)}
+ }
  function selectTeam(id:string){
   const t=teams.find(x=>x.id===id);
   setTeamDraft(t?{id:t.id,name:t.name,unit:t.unit_name,supervisor:t.supervisor_user_id||''}:{...blankTeam});
@@ -113,6 +152,26 @@ export default function AdminWorkspace({client,companyId,companyName,userId,role
     <button className="primary" disabled={busy}>Salvar stand</button>
    </form>}
   </section>
+  {canEdit&&<section className="panel">
+   <h2>Convidar vendedor ou supervisor</h2>
+   <p>Informe um e-mail de teste para validar o convite sem cadastrar UID manualmente. O envio real está desativado até configurarmos e homologarmos o serviço SMTP e o endereço de retorno. Não utilize e-mails reais nesta fase.</p>
+   <form className="gc-admin-form" onSubmit={previewInvite}>
+    <div className="form-grid">
+     <label>Nome de exibição<input required minLength={2} maxLength={120} value={inviteDraft.name} onChange={e=>{setInviteDraft(s=>({...s,name:e.target.value}));setInvitePreview(null)}} placeholder="Vendedor de Teste"/></label>
+     <label>E-mail fictício<input type="email" required maxLength={254} value={inviteDraft.email} onChange={e=>{setInviteDraft(s=>({...s,email:e.target.value}));setInvitePreview(null)}} placeholder="vendedor@piloto.test"/></label>
+     <label>Função inicial<select value={inviteDraft.role} onChange={e=>{setInviteDraft(s=>({...s,role:e.target.value as InviteRole}));setInvitePreview(null)}}><option value="seller">Vendedor(a)</option><option value="supervisor">Supervisor(a)</option></select></label>
+    </div>
+    <button className="primary" disabled={busy}>Pré-validar convite</button>
+   </form>
+   {invitePreview&&<div className="gc-admin-form" role="status">
+    <h3>Resultado da pré-validação</h3>
+    <p><b>{invitePreview.display_name}</b> — {invitePreview.email} — {invitePreview.role==='seller'?'Vendedor(a)':'Supervisor(a)'}</p>
+    <p>{invitePreview.message}</p>
+    {invitePreview.already_invited&&<p>Já existe um convite ativo para este e-mail nesta empresa. Não é permitido reenviar automaticamente.</p>}
+    {!invitePreview.sending_enabled&&<p><b>Envio indisponível nesta homologação.</b> Configure SMTP e os controles do servidor antes de habilitar o envio.</p>}
+    <button type="button" className="secondary" disabled={busy||!invitePreview.sending_enabled||invitePreview.already_invited} onClick={()=>void sendInvite()}>Confirmar e enviar convite</button>
+   </div>}
+  </section>}
   <section className="panel">
    <h2>Equipe e funções</h2>
    <p>Os vínculos de diretoria não podem ser concedidos ou modificados por este formulário. O cadastro de uma pessoa exige uma conta fictícia preexistente no Supabase Auth; nenhuma senha ou chave privada é enviada pelo navegador.</p>
@@ -153,7 +212,7 @@ export default function AdminWorkspace({client,companyId,companyName,userId,role
    </div><button className="primary" disabled={busy}>Cadastrar empresa</button></form>
   </section>}
   <section className="panel"><h2>Governança do piloto</h2>
-   <p>Esta versão não envia convites, não cria usuários no Auth, não altera senhas e não permite concessão de diretoria pela interface. Não utilize dados de clientes reais. Operações administrativas ficam registradas em auditoria privada no banco.</p>
+   <p>Esta versão permite pré-validar convites pelo servidor, mas mantém o envio de e-mails bloqueado até a homologação do SMTP. Não cria usuários Auth sem envio autorizado, não altera senhas e não permite concessão de diretoria pela interface. Não utilize dados de clientes reais. Operações administrativas ficam registradas em auditoria privada no banco.</p>
    <button className="secondary" type="button" onClick={()=>void onRefresh()} disabled={busy}>Atualizar estrutura da empresa</button>
   </section>
  </div>;
