@@ -1,6 +1,18 @@
-# EPSA Gestão Comercial v0.16 — exportação mensal em CSV
+# EPSA Gestão Comercial v0.17 — Painel gerencial de desempenho
 
 **Ambiente de homologação independente**, conectado somente ao Supabase **Gestao Comercial Temporario** (`tilrqwcymhghmpvxukur`). Não use dados reais de clientes nesta fase. O EPSA Core e a GVS não são alterados por este projeto.
+
+## Novidades da v0.17 — Painel gerencial presencial
+
+- Novo menu **Painel gerencial**, acessível somente à Supervisão e Diretoria ativas, com referência mensal.
+- Visão executiva de atendimentos, compradores, conversão imediata, cotas e valor dos créditos, com comparação contra o mês anterior quando existir base válida.
+- Evolução de **seis competências**, com gráficos de compradores e tabela detalhada. Meses sem fechamento válido aparecem como **Sem registros**, nunca como zero produtividade.
+- Ranking de stands autorizados, preservando o stand histórico de cada lançamento, com desempate por cotas e créditos. Indicadores de conversão agregados por soma de numeradores e denominadores (nunca médias simples).
+- Metas próprias dos stands: percentual consolidado **somente** quando todos os stands autorizados possuem metas positivas para o mesmo indicador; metas incompletas sinalizadas como tais.
+- Dados do **presencial** separados do funil digital; vendedor não possui permissão para consultar o painel.
+- Proteção de qualidade: se a consulta atingir o limite de 1.000 fechamentos, o painel não produz tendências ou rankings potencialmente incompletos.
+- Usa consultas de leitura já existentes, com RLS; nenhuma tabela/migração nova e nenhuma alteração nos ambientes EPSA Core ou GVS.
+- Homologação `docs/PAINEL_GERENCIAL_V017.md` — branch separada e PR em draft.
 
 ## Novidades da v0.16 — CSV comercial para Excel
 
