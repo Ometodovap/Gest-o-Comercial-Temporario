@@ -119,3 +119,25 @@
 .gc-admin-audit-empty{padding:16px;background:#f7faff;border:1px solid #d7e3f1;border-radius:10px;color:#5f7896}
 .gc-admin-audit .table-scroll{max-height:470px;overflow:auto}
 .gc-admin-audit .table-scroll td:first-child{white-space:nowrap}
+
+/* v0.17 — painel gerencial presencial: visualização legível e responsiva */
+.mg-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:22px}
+.mg-kpis>div{background:#f8fbff;border:1px solid #dae6f3;padding:16px;border-radius:12px;display:grid;gap:8px;min-width:0}
+.mg-kpis strong{font-size:22px;line-height:1.2;color:#123657;overflow-wrap:anywhere}
+.mg-kpis small{font-size:11px;color:#667f9b;line-height:1.4}
+.mg-trend{display:grid;gap:12px;margin:20px 0}
+.mg-trend-row{display:grid;grid-template-columns:104px minmax(90px,1fr) 130px 80px;gap:13px;align-items:center}
+.mg-trend-row>b{font-size:12px;color:#173b61;font-weight:650}
+.mg-trend-row>span{font-size:12px;color:#41617f}
+.mg-trend-track{height:16px;border-radius:100px;background:#e6edf5;overflow:hidden}
+.mg-trend-fill{background:linear-gradient(90deg,#2479b4,#16a377);border-radius:100px;height:100%}
+.mg-footnote{color:#667e9a;font-size:12px;line-height:1.6;margin-top:13px}
+.mg-no-data{padding:16px;border:1px solid #d6e3f2;background:#f6f9fe;border-radius:10px;color:#4e6a85}
+.mg-goals{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:13px;margin-top:18px}
+.mg-goal{border-radius:12px;border:1px solid #dbe7f3;background:#f9fbff;padding:16px;display:grid;gap:12px;min-width:0}
+.mg-goal>b{font-size:13px;color:#1e4367}
+.mg-goal>div:not(.goal-track){font-size:18px;font-weight:700;color:#113556;overflow-wrap:anywhere}
+.mg-goal>div>span{font-size:12px;font-weight:400;color:#627e99}
+.mg-goal small{font-size:11px;color:#627e99;line-height:1.5}
+@media(max-width:850px){.mg-trend-row{grid-template-columns:95px minmax(75px,1fr) 110px;gap:9px}.mg-trend-row>span:last-child{grid-column:2 / -1;text-align:right}}
+@media(max-width:530px){.mg-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.mg-trend-row{grid-template-columns:88px minmax(0,1fr);gap:7px}.mg-trend-row>span:nth-last-child(2){grid-column:2}.mg-trend-row>span:last-child{grid-column:2;text-align:left}.mg-goals{grid-template-columns:1fr}}
