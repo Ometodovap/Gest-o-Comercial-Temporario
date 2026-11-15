@@ -19,6 +19,7 @@
     "../src/digitalPipeline.ts",
     "../src/digitalInsights.ts",
     "../src/digitalManagement.ts",
-    "../src/securityScope.ts"
+    "../src/securityScope.ts",
+    "../src/accessMembership.ts"
   ]
 }

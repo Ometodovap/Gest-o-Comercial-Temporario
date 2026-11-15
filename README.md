@@ -1,6 +1,15 @@
-# EPSA Gestão Comercial v0.11 — consolidação e segurança
+# EPSA Gestão Comercial v0.12 — proteção de privilégios e acesso revogado
 
 **Ambiente de homologação independente**, conectado somente ao Supabase **Gestao Comercial Temporario** (`tilrqwcymhghmpvxukur`). Não use dados reais de clientes nesta fase. O EPSA Core e a GVS não são alterados por este projeto.
+
+## Novidades da v0.12 — permissões e revogação de acesso
+
+- **Supabase temporário:** migração `gc_secure_default_privileges_v012` aplicada em 14/11/2026, versão `20261114212547`. Novos objetos de `postgres` no schema `public` não recebem acesso automático; concessões para API e funções ficam explícitas.
+- **Sem alteração dos grants das tabelas existentes**, sem modificar RLS, dados ou o projeto EPSA/GVS.
+- **Verificação de acesso na interface:** ao retornar para a aba, revalida associações ativas e papéis. Dados anteriores ficam ocultos até a verificação; erros falham fechados.
+- **Revogação de acesso:** ensaio transacional com Ana e Marcos com associação temporariamente inativa (ROLLBACK) confirmou 0 registros acessíveis, sem deixar mudanças no banco.
+- **Pendência:** proteção contra senhas vazadas requer plano Supabase Pro ou superior; não autorizamos compra de plano nem ativação por tentativa.
+- Guia técnico e checklist em `docs/SEGURANCA_REVOGACAO_V012.md`. Esta versão continua em homologação antes de receber clientes reais.
 
 ## Novidades da v0.11 — consolidação e segurança
 
