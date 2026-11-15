@@ -43,7 +43,8 @@ test('v0.12: revalidação é associada ao usuário atual e descarta respostas a
  assert.match(app,/membershipRevision\]\)/);
 });
 test('v0.12: erro de consulta impede uso de vínculos em cache',()=>{
- assert.match(app,/if\(error\)\{\s*setMemberships\(\[\]\);setCompanyId\(''\);setCompanyChoices\(\{\}\)/);
+ assert.match(app,/const revokeCachedAccess=[\s\S]*?setMemberships\(\[\]\);setCompanyId\(''\);setCompanyChoices\(\{\}\)/);
+ assert.match(app,/if\(error\)\{\s*revokeCachedAccess\(/);
  assert.match(app,/Não foi possível verificar seu acesso/);
 });
 test('v0.12: migração restringe futuros objetos no esquema público sem modificar existentes',()=>{
