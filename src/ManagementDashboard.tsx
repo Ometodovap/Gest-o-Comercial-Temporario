@@ -71,6 +71,17 @@ export default function ManagementDashboard({role,companyId,month,reports,teams,
      <span>{stats.hasRecords?percent(stats.conversion):'—'} conv.</span>
     </div>)}
    </div>
+   <div className="table-scroll"><table>
+    <thead><tr><th>Mês</th><th>Atendimentos</th><th>Compradores</th><th>Cotas</th><th>Créditos</th><th>Conversão imediata</th></tr></thead>
+    <tbody>{months.map(({month:reference,stats})=><tr key={reference}>
+     <td><b>{formatMonth(reference)}</b></td>
+     <td>{stats.hasRecords?stats.atendimentos:'—'}</td>
+     <td>{stats.hasRecords?stats.compradores:'—'}</td>
+     <td>{stats.hasRecords?stats.cotas:'—'}</td>
+     <td>{stats.hasRecords?brl(stats.valor_creditos):'Sem registros'}</td>
+     <td>{stats.hasRecords?percent(stats.conversion):'—'}</td>
+    </tr>)}</tbody>
+   </table></div>
    <p className="mg-footnote">Meses sem registros não são contabilizados como zero desempenho. O cálculo inclui todos os stands atualmente autorizados ao seu perfil, respeitando o stand original de cada lançamento.</p>
   </section>
   <section className="panel">
@@ -88,7 +99,7 @@ export default function ManagementDashboard({role,companyId,month,reports,teams,
       <td>{item.stats.hasRecords?item.stats.cotas:'—'}</td>
       <td>{item.stats.hasRecords?brl(item.stats.valor_creditos):'—'}</td>
       <td>{item.stats.hasRecords?item.stats.validados:'—'}</td>
-      <td>{target>0?String(item.stats.compradores)+' / '+target+' ('+goalProgress(item.stats.compradores,target)?.toFixed(1).replace('.',',')+'%)':'Não definida'}</td>
+      <td>{!item.stats.hasRecords?'Sem registros':target>0?String(item.stats.compradores)+' / '+target+' ('+goalProgress(item.stats.compradores,target)?.toFixed(1).replace('.',',')+'%)':'Não definida'}</td>
      </tr>;
     })}
     {stands.length===0&&<tr><td colSpan={8}>Nenhum stand autorizado para comparação.</td></tr>}
