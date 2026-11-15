@@ -1,0 +1,4 @@
+# Gerenciamento dos endpoints do Supabase Gestão Comercial Temporário.
+# Nenhum endpoint de convite pode ser público.
+[functions.gc-invite-user]
+verify_jwt = true
