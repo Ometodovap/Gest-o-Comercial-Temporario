@@ -47,8 +47,10 @@ export function ManagementMonthComparison({current,previous,currentMonth,previou
       </div>
      </div>
      <div className="mg-compare-difference">
-      {item.delta!==null&&<span>Diferença absoluta: {item.delta>0?'+':''}{formatMetric(option.key,item.delta)}</span>}
-      <small>{comparison}</small>
+      {item.delta!==null&&<span>{option.key==='conversion'
+       ?'Diferença de conversão: '+signedVariation(item.delta,'p.p.')
+       :'Diferença absoluta: '+(item.delta>0?'+':'')+formatMetric(option.key,item.delta)}</span>}
+      {(option.key!=='conversion'||item.delta===null)&&<small>{comparison}</small>}
      </div>
     </article>;
    })}
