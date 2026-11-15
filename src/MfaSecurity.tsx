@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react';
 import type {FormEvent} from 'react';
 import type {SupabaseClient} from '@supabase/supabase-js';
-import {isTotpCode} from './mfaPolicy';
+import {canTestBackup,isTotpCode} from './mfaPolicy';
 
 type Factor={id:string;friendly_name?:string|null;status:string};
 const errorMessage=(error:unknown)=>error instanceof Error?error.message:'Não foi possível concluir a operação de autenticação.';
@@ -128,7 +128,7 @@ export function MfaSettings({client,onEnrolled}:{client:SupabaseClient;onEnrolle
  }
  async function verifyBackup(event:FormEvent){
   event.preventDefault();
-  if(busy||factors.length<2||!factors.some(f=>f.id===backupFactorId)||!isTotpCode(backupCode))return;
+  if(busy||!canTestBackup(factors,backupFactorId,backupCode))return;
   setBusy(true);setError('');setSuccess('');setBackupTested('');
   try{
    const assurance=await client.auth.mfa.getAuthenticatorAssuranceLevel();
@@ -171,7 +171,7 @@ export function MfaSettings({client,onEnrolled}:{client:SupabaseClient;onEnrolle
      <input type="text" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} autoComplete="one-time-code"
       value={backupCode} onChange={e=>setBackupCode(e.target.value.replace(/[^0-9]/g,'').slice(0,6))} placeholder="000000" required/>
     </label>
-    <button type="submit" className="primary" disabled={busy||!backupFactorId||!isTotpCode(backupCode)}>{busy?'Verificando...':'Testar autenticador'}</button>
+    <button type="submit" className="primary" disabled={busy||!canTestBackup(factors,backupFactorId,backupCode)}>{busy?'Verificando...':'Testar autenticador'}</button>
    </form>
    {backupTested&&<p className="success" role="status">Código do autenticador selecionado confirmado nesta sessão. Certifique-se de que ele está em um dispositivo independente.</p>}
    <p className="mg-footnote">Este teste comprova a validade do código, mas não comprova fisicamente que os aplicativos estejam em aparelhos diferentes. Não compartilhe QR Code, chave privada ou código.</p>
