@@ -10,6 +10,8 @@ import AdminWorkspace from './AdminWorkspace';
 import {buildClosuresCsv,buildStandsCsv,exportFilename} from './monthlyExport';
 import {createScopeGuard,scopeKey} from './securityScope';
 import {activeMembershipFingerprint} from './accessMembership';
+import {MfaChallenge,MfaSettings} from './MfaSecurity';
+import {requiresMfaChallenge} from './mfaPolicy';
 import {reviewGate} from './feedbackReview';
 import {brl,emptyFields,evolution,moveDay,NUMERIC_FIELDS,percent,summary,todayBrazil,validateFields} from './metrics';
 import {emptyGoal,goalForSeller,goalMetrics,goalProgress,managerTotals,monthDailyStats,monthlyReports,sellerMonthlyStats,validateGoal} from './goals';
@@ -26,7 +28,7 @@ const fields:{key:keyof Omit<ReportFields,'notes'>;name:string}[]=[
 ];
 const roles={seller:'Vendedor',supervisor:'Supervisor',manager:'Diretoria'};
 const statusNames={draft:'Rascunho',submitted:'Enviado',validated:'Validado',returned:'Devolvido'};
-type Tab='day'|'results'|'team'|'feedback'|'evolution'|'goals'|'productivity'|'management'|'digital'|'admin';
+type Tab='day'|'results'|'team'|'feedback'|'evolution'|'goals'|'productivity'|'management'|'digital'|'admin'|'security';
 const today=todayBrazil();
 function formatDate(value:string){if(!value)return '—';return value.split('-').reverse().join('/');}
 function displayMetric(value:number,kind:'money'|'count'){return kind==='money'?brl(value):value.toLocaleString('pt-BR');}
@@ -39,6 +41,9 @@ function GoalMeter({label,actual,target,kind}:{label:string;actual:number;target
 
 export default function App(){
  const [user,setUser]=useState<User|null>(null);
+ const [mfaGate,setMfaGate]=useState<'checking'|'ready'|'challenge'|'error'>('checking');
+ const [mfaProblem,setMfaProblem]=useState('');
+ const [mfaRevision,setMfaRevision]=useState(0);
  const [ready,setReady]=useState(false);
  const [loginEmail,setLoginEmail]=useState('');const [loginPassword,setLoginPassword]=useState('');
  const [memberships,setMemberships]=useState<Membership[]>([]);const [companyId,setCompanyId]=useState('');
@@ -96,7 +101,8 @@ export default function App(){
  {id:'admin',label:'Administração',allowed:role==='supervisor'||role==='manager'},
  {id:'team',label:'Minha equipe',allowed:role==='supervisor'||role==='manager'},
  {id:'feedback',label:role==='seller'?'Meus feedbacks':'Feedback e planos',allowed:!!role},
- {id:'evolution',label:role==='seller'?'Minha evolução':'Evolução da equipe',allowed:!!role}
+ {id:'evolution',label:role==='seller'?'Minha evolução':'Evolução da equipe',allowed:!!role},
+ {id:'security',label:'Segurança da conta',allowed:role==='supervisor'||role==='manager'}
  ];
  function notify(msg:string,err=false){if(err){setProblem(msg);setMessage('')}else{setMessage(msg);setProblem('')}}
 
@@ -113,19 +119,37 @@ export default function App(){
     setUser(next);setReady(true);
    }
   });
-  const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
    authEventSeen=true;
    const nextId=session?.user?.id||'';
    if(nextId!==authUserId.current){
     authUserId.current=nextId;
+    setMfaGate('checking');
     loadGate.current.invalidate();setLoadedScope('');
    }
    setUser(session?.user||null);setReady(true);
+   // SIGNED_IN também dispara ao retomar foco na mesma sessão; não desmontar a tela nesse evento.
+   if(event==='TOKEN_REFRESHED'||event==='MFA_CHALLENGE_VERIFIED')setMfaRevision(n=>n+1);
   });
   return ()=>{active=false;subscription.unsubscribe()};
  },[]);
  useEffect(()=>{
-  if(!user||!supabase){
+  if(!user||!supabase){setMfaGate('checking');return;}
+  let active=true;
+  setMfaGate('checking');
+  (async()=>{
+   try{
+    const {data,error}=await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if(!active)return;
+    if(error)throw error;
+    setMfaProblem('');
+    setMfaGate(requiresMfaChallenge(data.currentLevel,data.nextLevel)?'challenge':'ready');
+   }catch(e){if(active){setMfaProblem(e instanceof Error?e.message:'Não foi possível verificar o segundo fator.');setMfaGate('error');}}
+  })();
+  return ()=>{active=false};
+ },[user?.id,mfaRevision]);
+ useEffect(()=>{
+  if(!user||!supabase||mfaGate!=='ready'){
    membershipFingerprint.current='';
    loadGate.current.invalidate();setLoadedScope('');
    setMemberships([]);setCompanyId('');setCompanyChoices({});
@@ -196,10 +220,10 @@ export default function App(){
    window.removeEventListener('focus',onFocus);
    document.removeEventListener('visibilitychange',onVisible);
   };
- },[user?.id]);
+ },[user?.id,mfaGate]);
  const loadData=useCallback(async()=>{
   const requestScope=scopeKey(user?.id,companyId,periodMonth);
-  if(!supabase||!requestScope)return;
+  if(!supabase||!requestScope||mfaGate!=='ready')return;
   const ticket=loadGate.current.begin(requestScope);
   setLoadedScope(previous=>previous===requestScope?previous:'');
   setBusy(true);
@@ -227,14 +251,14 @@ export default function App(){
     notify(`Falha ao consultar informações: ${e instanceof Error?e.message:(e&&typeof e==='object'&&'message' in e?String(e.message):String(e))}`,true);
    }
   }finally{if(loadGate.current.isCurrent(ticket,liveScope.current))setBusy(false)}
- },[companyId,periodMonth,user?.id,membershipRevision]);
+ },[companyId,periodMonth,user?.id,membershipRevision,mfaGate]);
  useEffect(()=>{void loadData()},[loadData]);
  useEffect(()=>{
   const x=reports.find(r=>r.seller_id===user?.id&&r.work_date===workDate&&r.shift===shift);
   setReportFields(x?Object.fromEntries([...NUMERIC_FIELDS,'notes'].map(k=>[k,x[k as keyof Report]])) as ReportFields:{...emptyFields});
   if(x)setTeamId(x.team_id);else if(myAssignments.length>0)setTeamId(old=>myAssignments.some(a=>a.team_id===old)?old:myAssignments[0].team_id);
  },[workDate,shift,reports,user?.id,assignments]);
- useEffect(()=>{if(role==='seller'){if(tab==='team'||tab==='productivity'||tab==='management')setTab('day')}else if(role&&tab==='day')setTab('team');},[role,tab]);
+ useEffect(()=>{if(role==='seller'){if(tab==='team'||tab==='productivity'||tab==='management'||tab==='security')setTab('day')}else if(role&&tab==='day')setTab('team');},[role,tab]);
  useEffect(()=>{if(availableSellers.length&&!availableSellers.some(x=>x.user_id===feedbackSeller))setFeedbackSeller(availableSellers[0].user_id)},[availableSellers.length,companyId]);
  useEffect(()=>{if(availableSellers.length&&!availableSellers.some(x=>x.user_id===goalSeller))setGoalSeller(availableSellers[0].user_id)},[availableSellers.length,companyId]);
  useEffect(()=>{const g=goalForSeller(goals,goalSeller,periodMonth);setGoalDraft(g?{goal_atendimentos:Number(g.goal_atendimentos),goal_vendas:Number(g.goal_vendas),goal_cotas:Number(g.goal_cotas),goal_creditos:Number(g.goal_creditos)}:{...emptyGoal});},[goals,goalSeller,periodMonth]);
@@ -345,6 +369,9 @@ export default function App(){
  if(!url||!key)return <div className="setup"><h1>EPSA Gestão Comercial</h1><p>Versão preparada para conectar a um Supabase de desenvolvimento isolado.</p><p>Configure <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> em <code>.env</code>. Não use a chave <code>service_role</code>.</p></div>;
  if(!ready)return <div className="setup">Carregando autenticação...</div>;
  if(!user)return <div className="login"><div className="login-card"><div className="brand-mark">⬡</div><h1>EPSA Gestão Comercial</h1><p>Gestão de produtividade e desenvolvimento comercial</p><form onSubmit={signIn}><label>E-mail<input type="email" autoComplete="username" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} required/></label><label>Senha<input type="password" autoComplete="current-password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} required/></label><button className="primary" disabled={busy}>Entrar</button></form>{problem&&<p className="error" role="alert">{problem}</p>}<small>O acesso é concedido pela administração da empresa. Não há autocadastro nesta versão.</small></div></div>;
+ if(mfaGate==='checking')return <div className="setup"><h1>EPSA Gestão Comercial</h1><p>Verificando segurança da sessão...</p></div>;
+ if(mfaGate==='error')return <div className="setup"><h1>Verificação de segurança indisponível</h1><p role="alert">{mfaProblem}</p><button type="button" onClick={()=>setMfaRevision(n=>n+1)}>Tentar novamente</button><button type="button" onClick={()=>void logout()}>Sair da conta</button></div>;
+ if(mfaGate==='challenge'&&supabase)return <MfaChallenge client={supabase} onVerified={()=>setMfaRevision(n=>n+1)} onLogout={()=>void logout()}/>;
  if(!membership)return <div className="setup"><h1>EPSA Gestão Comercial</h1>{problem&&<p className="error">{problem}</p>}<p>Usuário autenticado, mas sem empresa ativa vinculada ao módulo. A administração deve cadastrar a associação entre seu usuário e a empresa no projeto de desenvolvimento.</p><button onClick={logout}>Sair</button></div>;
  if(loadedScope!==currentScope)return <div className="setup"><h1>EPSA Gestão Comercial</h1><p>Carregando informações autorizadas da empresa...</p>{problem&&<p className="error" role="alert">{problem}</p>}<button onClick={()=>void loadData()}>Tentar novamente</button><button onClick={logout}>Sair</button></div>;
  return <div className="layout"><aside className="sidebar"><div className="brand"><span className="brand-mark">⬡</span><div><b>EPSA Gestão</b><small>COMERCIAL</small></div></div><div className="sidebar-name">{companyName}</div><nav aria-label="Navegação principal">{tabItems.filter(x=>x.allowed).map(x=><button type="button" key={x.id} aria-current={tab===x.id?'page':undefined} className={tab===x.id?'nav-active':''} onClick={()=>{setTab(x.id);setMessage('');setProblem('')}}>{x.label}</button>)}</nav><div className="sidebar-bottom"><b>{membership.display_name}</b><small>{roles[role!]}</small><button onClick={logout}>Sair da conta</button></div></aside>
@@ -365,6 +392,7 @@ export default function App(){
  <section className="panel"><h2>Definir metas mensais</h2><p>Somente supervisores e diretoria autorizados podem registrar ou alterar metas. Não são copiadas automaticamente para outros meses.</p><form onSubmit={saveGoal}><div className="form-grid"><label>Vendedor<select value={goalSeller} onChange={e=>setGoalSeller(e.target.value)}>{availableSellers.map(s=><option value={s.user_id} key={s.user_id}>{s.display_name}</option>)}</select></label>{goalMetrics.map(m=><label key={m.key}>{m.label}<input type="number" min="0" step={m.format==='money'?'0.01':'1'} value={Number.isNaN(goalDraft[m.key])?'':goalDraft[m.key]} onChange={e=>setGoalDraft(o=>({...o,[m.key]:e.target.value===''?NaN:Number(e.target.value)}))}/></label>)}</div><p>Preencha 0 para deixar determinada meta sem definição. Informe pelo menos uma meta positiva.</p><button disabled={busy||!goalSeller} className="primary">{goalSelected?'Atualizar metas do vendedor':'Cadastrar metas do vendedor'}</button></form></section></>}
  {role!=='seller'&&<section className="panel"><h2>Definir metas do stand</h2><p>Metas próprias da equipe, sem sobrescrever as metas dos vendedores. Visíveis apenas a usuários autorizados.</p><form onSubmit={saveTeamGoal}><div className="form-grid"><label>Equipe / stand<select value={goalTeam} onChange={e=>setGoalTeam(e.target.value)}>{managedTeams.map(t=><option value={t.id} key={t.id}>{t.name}</option>)}</select></label>{goalMetrics.map(m=><label key={m.key}>{m.label}<input type="number" min="0" step={m.format==='money'?'0.01':'1'} value={Number.isNaN(teamGoalDraft[m.key])?'':teamGoalDraft[m.key]} onChange={e=>setTeamGoalDraft(o=>({...o,[m.key]:e.target.value===''?NaN:Number(e.target.value)}))}/></label>)}</div><p>Informe ao menos uma meta positiva. Zero significa meta ainda não definida.</p><button className="primary" disabled={busy||!goalTeam}>{teamGoalSelected?'Atualizar meta do stand':'Cadastrar meta do stand'}</button></form></section>}
  </>}
+ {tab==='security'&&supabase&&role&&role!=='seller'&&<MfaSettings client={supabase} onEnrolled={()=>setMfaRevision(n=>n+1)}/>}
  {tab==='admin'&&supabase&&user&&role&&role!=='seller'&&<AdminWorkspace key={companyId} client={supabase} companyId={companyId} companyName={companyName} userId={user.id} role={role} teams={teamList} people={people} assignments={assignments} onRefresh={loadData}/>}
  {tab==='digital'&&supabase&&user&&role&&<DigitalWorkspace key={companyId} client={supabase} companyId={companyId} userId={user.id} role={role} assignments={assignments} people={people} teams={teamList}/>}
  {tab==='management'&&(role==='manager'||role==='supervisor')&&<ManagementDashboard key={companyId} role={role} companyId={companyId} month={periodMonth} reports={reports} teams={managedTeams} teamGoals={teamGoals} people={people} assignments={assignments} sellerGoals={goals}/>}

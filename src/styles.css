@@ -173,3 +173,12 @@
 .mg-seller-selector{max-width:420px;margin-top:18px}
 .mg-seller-selector label{display:grid;gap:8px;font-size:13px;font-weight:700;color:#294968}
 .mg-seller-selector select{width:100%;background:#fff;color:#123657;border:1px solid #c5d7e9;border-radius:9px;padding:12px 14px}
+
+/* MFA de homologação: QR e formulário sem dependências externas */
+.mfa-login{display:grid;gap:14px}
+.mfa-login form{display:grid;gap:14px}
+.mfa-login select,.mfa-setup input{width:100%;max-width:100%;padding:12px;border:1px solid #c5d7e9;border-radius:9px;background:#fff;color:#15385d}
+.mfa-setup{max-width:540px;margin-top:22px;border:1px solid #d9e6f2;background:#f9fbff;padding:20px;border-radius:12px;display:grid;gap:12px}
+.mfa-setup .mfa-qr{display:block;width:220px;max-width:100%;height:auto;object-fit:contain;background:#fff;border:1px solid #e0e9f2;padding:8px;border-radius:8px}
+.mfa-setup label{display:grid;gap:8px;overflow-wrap:anywhere;color:#24486c}
+.mfa-setup .actions{display:flex;gap:10px;flex-wrap:wrap}
