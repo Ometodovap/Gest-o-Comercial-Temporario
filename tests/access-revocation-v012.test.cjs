@@ -40,7 +40,7 @@ test('v0.12: revalidação é associada ao usuário atual e descarta respostas a
  assert.match(app,/loadGate\.current\.invalidate\(\)/);
  assert.match(app,/setLoadedScope\(''\)/);
  assert.match(app,/setMembershipRevision\(n=>n\+1\)/);
- assert.match(app,/membershipRevision\]\)/);
+ assert.match(app,/membershipRevision,mfaGate\]\)/);
 });
 test('v0.12: erro de consulta impede uso de vínculos em cache',()=>{
  assert.match(app,/const revokeCachedAccess=[\s\S]*?setMemberships\(\[\]\);setCompanyId\(''\);setCompanyChoices\(\{\}\)/);
