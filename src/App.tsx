@@ -123,46 +123,66 @@ export default function App(){
  useEffect(()=>{
   if(!user||!supabase){
    membershipFingerprint.current='';
+   loadGate.current.invalidate();setLoadedScope('');
    setMemberships([]);setCompanyId('');setCompanyChoices({});
    return;
   }
   let active=true;
   let requestNumber=0;
+  let revalidationInFlight=false;
+  let lastVerificationAt=0;
   const userId=user.id;
-  // Ao retomar a página, confirme vínculos ativos ANTES de exibir dados em cache.
+  // Verifica ao retomar foco sem desmontar toda a interface se o acesso permanece igual.
   const verifyAccess=async()=>{
+   if(revalidationInFlight||Date.now()-lastVerificationAt<1200)return;
+   revalidationInFlight=true;
    const current=++requestNumber;
-   loadGate.current.invalidate();
-   setLoadedScope('');
-   const {data,error}=await supabase.from('gc_memberships')
-    .select('company_id,user_id,role,display_name,active')
-    .eq('user_id',userId).eq('active',true);
-   if(!active||current!==requestNumber||authUserId.current!==userId)return;
-   if(error){
+   const revokeCachedAccess=(message:string)=>{
+    loadGate.current.invalidate();
+    setLoadedScope('');
     setMemberships([]);setCompanyId('');setCompanyChoices({});
     membershipFingerprint.current='';
-    notify('Não foi possível verificar seu acesso: '+error.message,true);
-    return; // Falha fechada: conteúdo permanece oculto, sem permitir ação com vínculo antigo.
-   }
-   const ms=(data||[]) as Membership[];
-   const fingerprint=activeMembershipFingerprint(ms);
-   if(fingerprint!==membershipFingerprint.current){
-    membershipFingerprint.current=fingerprint;
-    setTab('day');
-    setCompanyChoices({});
-   }
-   setMemberships(ms);
-   setCompanyId(prev=>ms.some(m=>m.company_id===prev)?prev:(ms[0]?.company_id||''));
-   // Revalida dados e papel também quando o usuário continua na mesma empresa.
-   setMembershipRevision(n=>n+1);
-   if(ms.length){
-    const {data:companies}=await supabase.from('gc_companies').select('id,name').in('id',ms.map(m=>m.company_id));
-    if(active&&current===requestNumber&&authUserId.current===userId&&companies){
-     setCompanyChoices(Object.fromEntries(companies.map(c=>[c.id,c.name])));
+    notify(message,true);
+   };
+   try{
+    const {data,error}=await supabase.from('gc_memberships')
+     .select('company_id,user_id,role,display_name,active')
+     .eq('user_id',userId).eq('active',true);
+    if(!active||current!==requestNumber||authUserId.current!==userId)return;
+    if(error){
+     revokeCachedAccess('Não foi possível verificar seu acesso: '+error.message);
+     return;
     }
+    const ms=(data||[]) as Membership[];
+    const fingerprint=activeMembershipFingerprint(ms);
+    const accessChanged=fingerprint!==membershipFingerprint.current;
+    if(accessChanged){
+     // Mudou usuário, empresa ou papel: invalida a visão anterior imediatamente.
+     membershipFingerprint.current=fingerprint;
+     loadGate.current.invalidate();setLoadedScope('');
+     setTab('day');setCompanyChoices({});
+     setMemberships(ms);
+     setCompanyId(prev=>ms.some(m=>m.company_id===prev)?prev:(ms[0]?.company_id||''));
+     setMembershipRevision(n=>n+1);
+     if(ms.length){
+      const {data:companies}=await supabase.from('gc_companies').select('id,name').in('id',ms.map(m=>m.company_id));
+      if(active&&current===requestNumber&&authUserId.current===userId&&companies){
+       setCompanyChoices(Object.fromEntries(companies.map(c=>[c.id,c.name])));
+      }
+     }
+    }else{
+     // Nome atualizado sem alteração de papel: ajusta rótulo sem recarregar relatórios.
+     setMemberships(prev=>JSON.stringify(prev)===JSON.stringify(ms)?prev:ms);
+    }
+   }catch(e){
+    if(active&&current===requestNumber&&authUserId.current===userId)
+     revokeCachedAccess('Falha ao verificar seu acesso. Tente novamente.');
+   }finally{
+    revalidationInFlight=false;
+    lastVerificationAt=Date.now();
    }
   };
-  const onFocus=()=>{void verifyAccess();};
+  const onFocus=()=>{if(document.visibilityState==='visible')void verifyAccess();};
   const onVisible=()=>{if(document.visibilityState==='visible')void verifyAccess();};
   void verifyAccess();
   window.addEventListener('focus',onFocus);
