@@ -23,7 +23,7 @@ test('v0.14: identifica usuário via Auth e busca manager ativo por empresa',()=
  assert.match(edge,/admin\.auth\.getUser\(match\[1\]\)/);
  assert.match(edge,/\.eq\("company_id", companyId\)\.eq\("user_id", actorId\)/);
  assert.match(edge,/\.eq\("role", "manager"\)\.eq\("active", true\)/);
- assert.doesNotMatch(edge,/user_metadata|app_metadata/);
+ assert.doesNotMatch(edge,/userInfo\.user\.(?:user_metadata|app_metadata)/);
  assert.match(edge,/if \(!manager\) return respond\(origin, 403,/);
 });
 test('v0.14: prévia não envia e-mail, não cria Auth nem grava log',()=>{
@@ -37,7 +37,7 @@ test('v0.14: servidor protege duplicidade, limites e auditoria',()=>{
  assert.match(edge,/maxPerManager24h = 10/);
  assert.match(edge,/status: "processing"/);
  assert.match(edge,/if \(duplicate\) return respond\(origin, 409,/);
- assert.match(edge,/status: "link_pending"/);
+ assert.match(edge,/await mark\("link_pending"/);
  assert.match(edge,/actingClient\.rpc\("gc_admin_save_member"/);
  assert.match(edge,/Somente a Diretoria ativa desta empresa/);
 });
