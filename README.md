@@ -1,6 +1,14 @@
-# EPSA Gestão Comercial v0.14 — convites controlados em homologação
+# EPSA Gestão Comercial v0.15 — auditoria administrativa
 
 **Ambiente de homologação independente**, conectado somente ao Supabase **Gestao Comercial Temporario** (`tilrqwcymhghmpvxukur`). Não use dados reais de clientes nesta fase. O EPSA Core e a GVS não são alterados por este projeto.
+
+## Novidades da v0.15 — Histórico administrativo protegido
+
+- A Diretoria pode acompanhar no aplicativo as alterações autorizadas em empresas, stands, colaboradores e atribuições, com responsável, horário de Brasília e registro relacionado.
+- Leitura somente da própria empresa, limitada aos 30 eventos recentes, sem acesso direto ao log bruto nem detalhes JSON.
+- Vendedor e supervisor são bloqueados pela interface **e** pelo banco; testes SQL em transações revertidas validaram isolamento entre empresas.
+- SQL `gc_admin_event_feed_v015` já aplicado ao Supabase temporário; documento de homologação: `docs/AUDITORIA_V015.md`.
+- Nenhuma alteração em produção comercial ou na configuração de convites reais. Merge da branch somente após preview.
 
 ## Novidades da v0.14 — convite com pré-validação segura
 
