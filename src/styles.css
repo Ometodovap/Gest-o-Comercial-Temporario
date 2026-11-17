@@ -188,13 +188,21 @@
 .mfa-factor-list{display:grid;gap:6px;padding-left:20px;margin:12px 0;color:#2d506e;font-size:13px}
 .mfa-setup select{width:100%;border:1px solid #c5d7e9;border-radius:9px;background:#fff;color:#15385d;padding:12px}
 
+/* Long company and account names must stay inside their containers. */
+.page,
+.sidebar-name,
+.sidebar-bottom,
+.login-card {
+  overflow-wrap: anywhere;
+}
+
+.toolbar,
+.toolbar > select {
+  min-width: 0;
+}
+
 /* Keep wide content inside its own panel or scroll area on narrow screens. */
 @media (max-width: 800px) {
-  .page,
-  .sidebar-bottom,
-  .login-card {
-    overflow-wrap: anywhere;
-  }
 
   .sidebar-bottom {
     display: grid;
@@ -206,7 +214,6 @@
   }
 
   .topbar > div,
-  .toolbar > select,
   .form-grid > *,
   .period-bar label,
   .period-bar > span,
