@@ -187,3 +187,91 @@
 .mfa-alert{border-left:3px solid #f59e0b;background:#fff7e9;color:#7b4a08;padding:14px 16px;border-radius:8px;line-height:1.5;margin-top:12px}
 .mfa-factor-list{display:grid;gap:6px;padding-left:20px;margin:12px 0;color:#2d506e;font-size:13px}
 .mfa-setup select{width:100%;border:1px solid #c5d7e9;border-radius:9px;background:#fff;color:#15385d;padding:12px}
+
+/* Keep wide content inside its own panel or scroll area on narrow screens. */
+@media (max-width: 800px) {
+  .page,
+  .sidebar-bottom,
+  .login-card {
+    overflow-wrap: anywhere;
+  }
+
+  .sidebar-bottom {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .sidebar-bottom button {
+    min-height: 44px;
+  }
+
+  .topbar > div,
+  .toolbar > select,
+  .form-grid > *,
+  .period-bar label,
+  .period-bar > span,
+  input,
+  select,
+  textarea {
+    min-width: 0;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  .toolbar > select {
+    flex: 1 1 160px;
+  }
+
+  .toolbar > button {
+    flex-shrink: 0;
+  }
+
+  .form-grid,
+  .gc-admin-form .form-grid,
+  .goal-grid,
+  .mg-goals {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .table-scroll {
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 490px) {
+  .login {
+    padding: 16px;
+  }
+
+  .login-card,
+  .mfa-setup {
+    padding: 18px;
+  }
+
+  .hero h1 {
+    font-size: 1.55rem;
+  }
+
+  .actions > * {
+    flex: 1 1 120px;
+    min-width: 0;
+  }
+
+  .kpis {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 155px), 1fr));
+  }
+
+  .digital-manager-summary strong {
+    font-size: clamp(16px, 5vw, 23px);
+  }
+}
