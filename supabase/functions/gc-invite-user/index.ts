@@ -95,6 +95,23 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return respond(origin, 422, { error: "Preencha empresa, nome, e-mail, função e operação válidos." });
   }
 
+  // Primeiro, autorização com o JWT real do usuário no PostgREST, SEM service_role.
+  // A RPC gc_admin_event_feed valida Diretoria ativa e exige aal2 quando há fator verificado.
+  // Isso ocorre antes de consultar o histórico ou chamar inviteUserByEmail com service_role.
+  const actingClient = createClient(projectUrl, publicKey, {
+    global: { headers: { Authorization: jwtHeader } },
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+  const { error: accessError } = await actingClient.rpc("gc_admin_event_feed", {
+    p_company_id: companyId,
+    p_limit: 1,
+  });
+  if (accessError) {
+    return respond(origin, 403, {
+      error: "Acesso administrativo não autorizado. Confirme o segundo fator, quando configurado."
+    });
+  }
+
   // Autorização feita diretamente no banco, por sessão atual. Não usa claims de papel no JWT.
   const { data: manager, error: membershipError } = await admin.from("gc_memberships")
     .select("company_id")
@@ -162,10 +179,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // Vínculo realizado com as credenciais da própria Diretoria, passando pela mesma
     // regra de autorização RPC da v0.13. Um erro nunca concede acesso por padrão.
-    const actingClient = createClient(projectUrl, publicKey, {
-      global: { headers: { Authorization: jwtHeader } },
-      auth: { autoRefreshToken: false, persistSession: false }
-    });
     const { error: linkError } = await actingClient.rpc("gc_admin_save_member", {
       p_company_id: companyId,
       p_user_id: invited.user.id,
