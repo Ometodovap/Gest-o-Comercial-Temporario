@@ -134,7 +134,12 @@ export default function App(){
     loadGate.current.invalidate();setLoadedScope('');
    }
    setUser(session?.user||null);setReady(true);
-   if(event==='PASSWORD_RECOVERY'){setRecoveryMode(true);setResetRequestOpen(false);}
+   if(event==='PASSWORD_RECOVERY'){
+    setRecoveryMode(true);setResetRequestOpen(false);
+    // Um link de recuperação pode trocar aal2 por aal1 até para o mesmo usuário.
+    // Reavaliar MFA antes de mostrar o formulário e permitir salvar outra senha.
+    setMfaGate('checking');setMfaRevision(n=>n+1);
+   }
    if(event==='SIGNED_OUT')setRecoveryMode(false);
    // SIGNED_IN também dispara ao retomar foco na mesma sessão; não desmontar a tela nesse evento.
    // Ao testar um segundo dispositivo com sessão já aal2, não desmontar o painel comercial.
@@ -392,10 +397,10 @@ export default function App(){
    {message&&<p className="success" role="status">{message}</p>}{problem&&<p className="error" role="alert">{problem}</p>}
    <small>O acesso é concedido pela administração da empresa. Não há autocadastro nesta versão.</small></div></div>;
  }
- if(recoveryMode&&supabase)return <SetRecoveredPassword client={supabase} onCompleted={()=>void completeRecovery()}/>;
  if(mfaGate==='checking')return <div className="setup"><h1>EPSA Gestão Comercial</h1><p>Verificando segurança da sessão...</p></div>;
  if(mfaGate==='error')return <div className="setup"><h1>Verificação de segurança indisponível</h1><p role="alert">{mfaProblem}</p><button type="button" onClick={()=>setMfaRevision(n=>n+1)}>Tentar novamente</button><button type="button" onClick={()=>void logout()}>Sair da conta</button></div>;
- if(mfaGate==='challenge'&&supabase)return <MfaChallenge client={supabase} onVerified={()=>setMfaRevision(n=>n+1)} onLogout={()=>void logout()}/>;
+ if(mfaGate==='challenge'&&supabase)return <MfaChallenge client={supabase} purpose={recoveryMode?'recovery':'login'} onVerified={()=>setMfaRevision(n=>n+1)} onLogout={()=>void logout()}/>;
+ if(recoveryMode&&supabase)return <SetRecoveredPassword client={supabase} onCompleted={()=>void completeRecovery()}/>;
  if(!membership)return <div className="setup"><h1>EPSA Gestão Comercial</h1>{problem&&<p className="error">{problem}</p>}<p>Usuário autenticado, mas sem empresa ativa vinculada ao módulo. A administração deve cadastrar a associação entre seu usuário e a empresa no projeto de desenvolvimento.</p><button onClick={logout}>Sair</button></div>;
  if(loadedScope!==currentScope)return <div className="setup"><h1>EPSA Gestão Comercial</h1><p>Carregando informações autorizadas da empresa...</p>{problem&&<p className="error" role="alert">{problem}</p>}<button onClick={()=>void loadData()}>Tentar novamente</button><button onClick={logout}>Sair</button></div>;
  return <div className="layout"><aside className="sidebar"><div className="brand"><span className="brand-mark">⬡</span><div><b>EPSA Gestão</b><small>COMERCIAL</small></div></div><div className="sidebar-name">{companyName}</div><nav aria-label="Navegação principal">{tabItems.filter(x=>x.allowed).map(x=><button type="button" key={x.id} aria-current={tab===x.id?'page':undefined} className={tab===x.id?'nav-active':''} onClick={()=>{setTab(x.id);setMessage('');setProblem('')}}>{x.label}</button>)}</nav><div className="sidebar-bottom"><b>{membership.display_name}</b><small>{roles[role!]}</small><button onClick={logout}>Sair da conta</button></div></aside>
