@@ -25,3 +25,11 @@ Fechar a lacuna de acesso direto a tabelas comerciais em `aal1` para a **Diretor
 A Edge Function `gc-invite-user` utiliza `service_role` para algumas operações: RLS não protege automaticamente esse uso. O envio de convites está condicionado às flags SMTP e a outras autorizações; a integração exige revisão isolada antes do uso real. Outras funções administrativas privadas já foram protegidas na v0.23.
 
 **Nada de dados reais até auditoria integral e decisão de liberação.**
+
+## Evidências registradas (19/11/2026)
+
+- Migração `20261119201811_gc_commercial_mfa_existing_factor_rls_v024` aplicada no projeto Supabase temporário e versionada no repositório.
+- 11 policies restritivas presentes; função privada `SECURITY DEFINER` presente.
+- Ensaios antes e depois da aplicação: Diretoria `aal1` com TOTP verificado fica sem leitura de relatórios e vínculos; `aal2` volta a visualizar e consulta auditoria; Marcos e Ana `aal1` mantêm acesso aos registros autorizados; Carla sem acesso aos lançamentos da Empresa Piloto A.
+- Testes em transações revertidas por `ROLLBACK`, sem alterar dados.
+- Auditoria dos endpoints com `service_role` ainda necessária, principalmente `gc-invite-user`.
