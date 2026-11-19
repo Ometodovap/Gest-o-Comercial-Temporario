@@ -6,7 +6,7 @@ import {isTotpCode} from './mfaPolicy';
 type Factor={id:string;friendly_name?:string|null;status:string};
 const errorMessage=(error:unknown)=>error instanceof Error?error.message:'Não foi possível concluir a operação de autenticação.';
 
-export function MfaChallenge({client,onVerified,onLogout}:{client:SupabaseClient;onVerified:()=>void;onLogout:()=>void}){
+export function MfaChallenge({client,onVerified,onLogout,purpose='login'}:{client:SupabaseClient;onVerified:()=>void;onLogout:()=>void;purpose?:'login'|'recovery'}){
  const [factors,setFactors]=useState<Factor[]>([]);
  const [factorId,setFactorId]=useState('');
  const [code,setCode]=useState('');
@@ -43,7 +43,7 @@ export function MfaChallenge({client,onVerified,onLogout}:{client:SupabaseClient
  return <div className="login"><div className="login-card mfa-login">
   <div className="brand-mark">⬡</div>
   <h1>Confirmar segundo fator</h1>
-  <p>Abra seu aplicativo autenticador e informe o código de 6 dígitos para acessar a EPSA Gestão Comercial.</p>
+  <p>{purpose==='recovery'?'Para definir uma nova senha, confirme o código de 6 dígitos do aplicativo autenticador já cadastrado.':'Abra seu aplicativo autenticador e informe o código de 6 dígitos para acessar a EPSA Gestão Comercial.'}</p>
   {loading?<p>Consultando fatores cadastrados...</p>:
    factors.length===0?<p role="alert">Nenhum aplicativo autenticador TOTP verificado foi encontrado. Entre em contato com a administração para recuperar o acesso.</p>:
    <form onSubmit={verify}>
@@ -56,7 +56,7 @@ export function MfaChallenge({client,onVerified,onLogout}:{client:SupabaseClient
      <input type="text" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} autoComplete="one-time-code"
       value={code} onChange={e=>setCode(e.target.value.replace(/[^0-9]/g,'').slice(0,6))} placeholder="000000" required/>
     </label>
-    <button className="primary" disabled={busy||!isTotpCode(code)}>{busy?'Verificando...':'Confirmar acesso'}</button>
+    <button className="primary" disabled={busy||!isTotpCode(code)}>{busy?'Verificando...':purpose==='recovery'?'Confirmar código':'Confirmar acesso'}</button>
    </form>}
   {error&&<p className="error" role="alert">{error}</p>}
   <button type="button" className="secondary" disabled={busy} onClick={onLogout}>Sair da conta</button>
