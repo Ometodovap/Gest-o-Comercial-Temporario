@@ -13,7 +13,7 @@ Cada uma das **seis funções privadas** passa a verificar, antes da lógica adm
 
 Isso é **enforcement seletivo para quem já cadastrou MFA**, sem exigir novos cadastros nem bloquear supervisores sem TOTP. A autorização original por empresa e função continua em vigor.
 
-SQL em `docs/sql/gc_admin_mfa_condicional_v023.sql` (fonte das definições atuais do banco). Não adicionar grants/novas rotas públicas, não alterar RLS ou dados.
+SQL em `supabase/migrations/20261119200404_gc_admin_mfa_conditional_existing_factor_v023.sql` (fonte das definições atuais do banco). Não adicionar grants/novas rotas públicas, não alterar RLS ou dados.
 
 ## Homologação do banco antes de publicar
 1. Executar CI do PR com os testes de que **todas as seis funções** receberam a regra e mantiveram `SECURITY DEFINER` e `search_path`.
@@ -30,3 +30,12 @@ SQL em `docs/sql/gc_admin_mfa_condicional_v023.sql` (fonte das definições atua
 
 ## Rollback
 Restaurar as definições das seis funções antes do guard usando as migrations existentes ou definições históricas verificadas; preferir migration reversa auditada, não alterar funções manualmente nem mexer em fatores de usuários.
+
+## Evidências executadas (19/11/2026)
+
+- CI do PR em branch: aprovado antes da aplicação da migração.
+- Ensaio transacional com as seis funções alteradas: Diretoria `aal1` bloqueada na auditoria; com `aal2` liberada; Marcos sem MFA manteve leitura de seus dois fechamentos. `ROLLBACK` verificado antes da aplicação.
+- Migração aplicada **somente** ao Supabase Gestão Comercial Temporário, registrada como versão `20261119200404`, `gc_admin_mfa_conditional_existing_factor_v023`.
+- Verificação posterior: guarda nas seis funções presente; `SECURITY DEFINER` e `search_path` originais preservados.
+- Testes transacionais de integração: as seis RPCs bloqueiam Diretoria `aal1` com erro `42501` de segundo fator; `aal2` permite consulta da auditoria; Marcos `aal1` mantém leitura comercial.
+- Dados preservados: **2 fechamentos**, **1 feedback**, **5 usuários Auth**, **1 fator TOTP verificado**. Nenhum dado de cliente real.
