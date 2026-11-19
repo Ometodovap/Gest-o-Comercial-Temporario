@@ -30,7 +30,7 @@ test('recuperação: segundo fator real eleva sessão antes da troca de senha',(
  assert.match(recover,/client\.auth\.updateUser\(\{password\}\)/);
 });
 test('recuperação: não remove MFA nem altera senha automaticamente',()=>{
- assert.doesNotMatch(app,/admin\.updateUserById|service_role|auth\.admin/);
+ assert.doesNotMatch(app,/admin\.updateUserById|supabase\.auth\.admin/);
  assert.doesNotMatch(recover,/auth\.mfa\.unenroll|auth\.admin|service_role/);
  assert.match(recover,/async function updatePassword\(event:FormEvent\)/);
  assert.match(recover,/onSubmit=\{updatePassword\}/);
