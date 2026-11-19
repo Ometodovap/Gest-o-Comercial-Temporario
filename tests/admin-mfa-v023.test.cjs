@@ -2,7 +2,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const sql=fs.readFileSync(path.join(__dirname,'../docs/sql/gc_admin_mfa_condicional_v023.sql'),'utf8');
+const sql=fs.readFileSync(path.join(__dirname,'../supabase/migrations/20261119200404_gc_admin_mfa_conditional_existing_factor_v023.sql'),'utf8');
 const functions=['gc_admin_assign_seller_impl','gc_admin_create_company_impl','gc_admin_event_feed_impl','gc_admin_rename_company_impl','gc_admin_save_member_impl','gc_admin_save_team_impl'];
 
 test('MFA administrativo: cobre todas as seis funções privadas privilegiadas',()=>{
